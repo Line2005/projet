@@ -74,6 +74,7 @@ function App() {
                 <Route path="/investors/opportunity" element={<AnnouncePage />} />
                 <Route path="/investors/collaborators" element={<InvestorCollaboratorsPage />} />
 
+
                 // ONG Association Parts
                 //Role base authentication
                 <Route path="/association/announce" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <NGOAnnouncementsPage /> </ProtectedRoute>} />

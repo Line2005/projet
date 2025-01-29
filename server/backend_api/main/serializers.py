@@ -329,11 +329,17 @@ class BaseHelpProposalSerializer(serializers.ModelSerializer):
         return f"{obj.investor.first_name} {obj.investor.last_name}"
 
     def get_help_request_details(self, obj):
+        # Get the financial details safely
+        financial_details = getattr(obj.help_request, 'financialrequest', None)
+        amount_requested = getattr(financial_details, 'amount_requested', 0) if financial_details else 0
+
         return {
             'id': obj.help_request.id,
             'specific_need': obj.help_request.specific_need,
             'request_type': obj.help_request.request_type,
             'created_at': obj.help_request.created_at,
+            'project_name': obj.help_request.project.project_name,
+            'amount_requested': amount_requested,
         }
 
 class FinancialProposalSerializer(BaseHelpProposalSerializer):
@@ -357,44 +363,58 @@ class TechnicalProposalSerializer(BaseHelpProposalSerializer):
 
 #Contract and collaborations
 class ContractSerializer(serializers.ModelSerializer):
+    contract_type = serializers.SerializerMethodField()
     proposal_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Contract
-        fields = ['id', 'contract_type', 'pdf_file', 'created_at',
-                  'signature_entrepreneur', 'signature_investor', 'proposal_details']
+        fields = ['id', 'contract_type', 'pdf_file', 'proposal_details']
+
+    def get_contract_type(self, obj):
+        return 'financial' if obj.financial_proposal else 'technical'
 
     def get_proposal_details(self, obj):
-        if obj.contract_type == 'financial':
+        proposal = obj.financial_proposal or obj.technical_proposal
+        if proposal:
             return {
-                'amount': obj.proposal.investment_amount,
-                'type': obj.proposal.investment_type,
-                'timeline': obj.proposal.timeline
+                'project_name': proposal.help_request.project.project_name,
+                'investor_name': f"{proposal.investor.first_name} {proposal.investor.last_name}",
+                'type': 'financial' if obj.financial_proposal else 'technical'
             }
-        return {
-            'expertise': obj.proposal.expertise,
-            'duration': obj.proposal.support_duration,
-            'type': obj.proposal.support_type
-        }
-
-
+        return None
 class CollaborationSerializer(serializers.ModelSerializer):
-    entrepreneur_name = serializers.SerializerMethodField()
-    investor_name = serializers.SerializerMethodField()
+    entrepreneur_details = serializers.SerializerMethodField()
+    investor_details = serializers.SerializerMethodField()
     project_name = serializers.SerializerMethodField()
     contract_details = ContractSerializer(source='contract')
 
+
+
     class Meta:
         model = Collaboration
-        fields = ['id', 'entrepreneur_name', 'investor_name', 'project_name',
+        fields = ['id', 'entrepreneur_details', 'investor_details', 'project_name',
                   'start_date', 'end_date', 'is_active', 'collaboration_type',
                   'contract_details']
 
-    def get_entrepreneur_name(self, obj):
-        return f"{obj.entrepreneur.first_name} {obj.entrepreneur.last_name}"
-
-    def get_investor_name(self, obj):
-        return f"{obj.investor.first_name} {obj.investor.last_name}"
-
     def get_project_name(self, obj):
         return obj.project.project_name
+
+    def get_entrepreneur_details(self, obj):
+        return {
+            'name': f"{obj.entrepreneur.first_name} {obj.entrepreneur.last_name}",
+            'email': obj.entrepreneur.user.email,
+            'phone': obj.entrepreneur.user.phone,
+            # Add any other entrepreneur fields you want to include
+        }
+    def get_investor_details(self, obj):
+        return {
+            'name': f"{obj.investor.first_name} {obj.investor.last_name}",
+            'email': obj.investor.user.email,
+            'phone': obj.investor.user.phone,
+            # Add any other entrepreneur fields you want to include
+        }
+class CollaborationStatsSerializer(serializers.Serializer):
+    total_collaborations = serializers.IntegerField()
+    financial_collaborations = serializers.IntegerField()
+    technical_collaborations = serializers.IntegerField()
+    total_investment_amount = serializers.DecimalField(max_digits=15, decimal_places=2)

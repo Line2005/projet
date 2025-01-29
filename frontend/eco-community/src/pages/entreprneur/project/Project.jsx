@@ -1,9 +1,8 @@
-import React, {useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from "../../../Services/auth.js";
 
 import { Search, Plus, BarChart2, FileText, Settings, LogOut, Menu, X, Calendar, MapPin, Users, DollarSign, HelpCircle, Info, HandHelping, Trash2 } from 'lucide-react';
-import axios from "axios";
 
 import api from "../../../Services/api.js";
 import {ProjectDetailsCard} from "./detail/ProjectModal.jsx";
@@ -15,7 +14,6 @@ const ProjectsPage = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [projects, setProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
     // Fonction de navigation flexible
@@ -54,12 +52,7 @@ const ProjectsPage = () => {
 
     const handleProjectDetails = (project) => {
         setSelectedProject(project);
-        setIsModalOpen(true);
-    };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setSelectedProject(null);
     };
 
     // Add this function to handle media URLs
@@ -154,7 +147,7 @@ const ProjectsPage = () => {
                             <Info className="h-5 w-5"/>
                             <span>Annonces</span>
                         </a>
-                        <a href="#"
+                        <a href="/entrepreneur/collaborators"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>

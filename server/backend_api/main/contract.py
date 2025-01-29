@@ -454,9 +454,9 @@ class ContractHandler:
                                         <h2>Agreement Details</h2>
                                         {'<div class="financial-item"><strong>Investment Amount</strong><p class="amount">' + contract_data['investment_amount'] + '</p><span class="currency"> FCFA</span></div>' if contract_type == 'financial' else ''}
                                         {'<div class="financial-item"><strong>Investment Type</strong><p>' + contract_data['investment_type'] + '</p></div>' if contract_type == 'financial' else ''}
-                                        {'<div class="financial-item"><strong>Investment Rate</strong><p>' + contract_data['investment_rate'] + '</p></div>' if contract_type == 'financial' else ''}
-                                        {'<div class="financial-item"><strong>Duration</strong><p>' + contract_data['duration_months'] + '</p></div>' if contract_type == 'financial' else ''}
-                                        {'<div class="financial-item"><strong>Monthly Payement</strong><p class="amount">' + contract_data['monthly_payment'] + '</p><span class="currency"> FCFA</span></div>' if contract_type == 'financial' else ''}
+                                        {'<div class="financial-item"><strong>Interest Rate</strong><p>' + contract_data['interest_rate'] + '%</p></div>' if contract_type == 'financial' else ''}
+                                        {'<div class="financial-item"><strong>Duration (Months)</strong><p>' + str(contract_data['duration_months']) + '</p></div>' if contract_type == 'financial' else ''}
+                                        {'<div class="financial-item"><strong>Monthly Payment</strong><p class="amount">' + contract_data['monthly_payment'] + '</p><span class="currency"> FCFA</span></div>' if contract_type == 'financial' else ''}
                                         {'<div class="financial-item"><strong>Total Interest</strong><p class="amount">' + contract_data['total_interest'] + '</p><span class="currency"> FCFA</span></div>' if contract_type == 'financial' else ''}
                                         {'<div class="financial-item"><strong>Total Repayment Amount</strong><p class="amount">' + contract_data['total_repayment'] + '</p><span class="currency"> FCFA</span></div>' if contract_type == 'financial' else ''}
                                         {'<div class="financial-item"><strong>Timeline</strong><p>' + contract_data['timeline'] + '</p></div>' if contract_type == 'financial' else ''}

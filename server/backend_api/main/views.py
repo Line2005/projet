@@ -1,5 +1,6 @@
 import os
 
+from django.http import FileResponse
 from django.shortcuts import render
 
 # Create your views here.
@@ -13,7 +14,7 @@ from django.contrib.auth.hashers import make_password
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from django.db.models import Count, Q  # Added Q here
+from django.db.models import Count, Q, Sum  # Added Q here
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from .contract import ContractHandler
@@ -30,7 +31,7 @@ from .permission import IsProposalOwnerOrRequestEntrepreneur
 from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpdateSerializer, UserListSerializer, \
     UserCreateSerializer, InvestorSerializer, ProjectSerializer, FinancialRequestSerializer, TechnicalRequestSerializer, \
     HelpRequestSerializer, TechnicalProposalSerializer, FinancialProposalSerializer, CollaborationSerializer, \
-    ContractSerializer
+    ContractSerializer, CollaborationStatsSerializer
 
 
 class RegisterView(APIView):
@@ -947,29 +948,6 @@ class EntrepreneurProposalView(APIView):
             )
 
 #Contract and collaborations
-class ContractAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, proposal_type=None, proposal_id=None):
-        user = request.user
-        if hasattr(user, 'entrepreneur'):
-            contracts = Contract.objects.filter(
-                proposal__help_request__entrepreneur=user.entrepreneur
-            )
-        elif hasattr(user, 'investor'):
-            contracts = Contract.objects.filter(
-                proposal__investor=user.investor
-            )
-        else:
-            contracts = Contract.objects.none()
-
-        if proposal_type and proposal_id:
-            contracts = contracts.filter(proposal__type=proposal_type, id=proposal_id)
-
-        serializer = ContractSerializer(contracts, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 class CollaborationAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -977,10 +955,168 @@ class CollaborationAPIView(APIView):
         user = request.user
         if hasattr(user, 'entrepreneur'):
             collaborations = Collaboration.objects.filter(entrepreneur=user.entrepreneur)
+
+            # Calculate statistics
+            stats = {
+                'total_collaborations': collaborations.count(),
+                'financial_collaborations': collaborations.filter(collaboration_type='financial').count(),
+                'technical_collaborations': collaborations.filter(collaboration_type='technical').count(),
+                'total_investment_amount': collaborations.filter(
+                    collaboration_type='financial'
+                ).aggregate(
+                    total=Sum('contract__financial_proposal__investment_amount')
+                )['total'] or 0
+            }
         elif hasattr(user, 'investor'):
             collaborations = Collaboration.objects.filter(investor=user.investor)
+
+            # Calculate statistics
+            stats = {
+                'total_collaborations': collaborations.count(),
+                'financial_collaborations': collaborations.filter(collaboration_type='financial').count(),
+                'technical_collaborations': collaborations.filter(collaboration_type='technical').count(),
+                'total_investment_amount': collaborations.filter(
+                    collaboration_type='financial'
+                ).aggregate(
+                    total=Sum('contract__financial_proposal__investment_amount')
+                )['total'] or 0
+            }
         else:
             collaborations = Collaboration.objects.none()
 
         serializer = CollaborationSerializer(collaborations, many=True)
+        stats_serializer = CollaborationStatsSerializer(stats)
+
+        response_data = {
+            'stats': stats_serializer.data,
+            'collaborations': serializer.data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+class ContractAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, proposal_type=None, proposal_id=None):
+        user = request.user
+        if hasattr(user, 'entrepreneur'):
+            # Modify this query to correctly filter contracts for the entrepreneur
+            contracts = Contract.objects.filter(
+                Q(financial_proposal__help_request__entrepreneur=user.entrepreneur) |
+                Q(technical_proposal__help_request__entrepreneur=user.entrepreneur)
+            )
+        elif hasattr(user, 'investor'):
+            contracts = Contract.objects.filter(
+                Q(financial_proposal__investor=user.investor) |
+                Q(technical_proposal__investor=user.investor)
+            )
+        else:
+            contracts = Contract.objects.none()
+
+        if proposal_type and proposal_id:
+            contracts = contracts.filter(
+                Q(financial_proposal__type=proposal_type, financial_proposal_id=proposal_id) |
+                Q(technical_proposal__type=proposal_type, technical_proposal_id=proposal_id)
+            )
+
+        serializer = ContractSerializer(contracts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ContractViewDownloadAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_contract(self, contract_id):
+        try:
+            contract = Contract.objects.get(id=contract_id)
+            # Check if user has permission to access this contract
+            user = self.request.user
+            if hasattr(user, 'entrepreneur'):
+                # Handle both financial and technical proposals
+                if contract.financial_proposal:
+                    has_access = contract.financial_proposal.help_request.entrepreneur == user.entrepreneur
+                elif contract.technical_proposal:
+                    has_access = contract.technical_proposal.help_request.entrepreneur == user.entrepreneur
+                else:
+                    return None
+
+                if not has_access:
+                    return None
+
+            elif hasattr(user, 'investor'):
+                # Handle both financial and technical proposals
+                if contract.financial_proposal:
+                    has_access = contract.financial_proposal.investor == user.investor
+                elif contract.technical_proposal:
+                    has_access = contract.technical_proposal.investor == user.investor
+                else:
+                    return None
+
+                if not has_access:
+                    return None
+
+            return contract
+        except Contract.DoesNotExist:
+            return None
+
+    def get(self, request, contract_id, action):
+        contract = self.get_contract(contract_id)
+        if not contract:
+            return Response(
+                {"error": "Contract not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            if not contract.pdf_file:
+                return Response(
+                    {"error": "PDF file not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Get the file path
+            file_path = contract.pdf_file.path
+
+            if not os.path.exists(file_path):
+                return Response(
+                    {"error": "PDF file not found on server"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Open the file
+            pdf_file = open(file_path, 'rb')
+
+            if action == "view":
+                response = FileResponse(pdf_file, content_type='application/pdf')
+                response['Content-Disposition'] = 'inline'
+                # Add headers to prevent caching
+                response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                response['Pragma'] = 'no-cache'
+                response['Expires'] = '0'
+                return response
+
+            elif action == "download":
+                # Get the appropriate proposal based on contract type
+                proposal = contract.financial_proposal or contract.technical_proposal
+                if proposal and proposal.help_request:
+                    project_name = proposal.help_request.project.project_name
+                else:
+                    project_name = 'unknown_project'
+
+                filename = f"{project_name}_{contract.contract_type}.pdf"
+                response = FileResponse(pdf_file, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{filename}"'
+                return response
+
+            else:
+                pdf_file.close()
+                return Response(
+                    {"error": "Invalid action"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

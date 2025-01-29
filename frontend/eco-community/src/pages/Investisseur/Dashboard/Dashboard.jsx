@@ -127,7 +127,7 @@ const ProjectRequestsInvestorPage = () => {
                             <Info className="h-5 w-5"/>
                             <span>Annonces</span>
                         </a>
-                        <a href="/collaborators"
+                        <a href="/investors/collaborators"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>

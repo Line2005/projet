@@ -4,7 +4,8 @@ from django.conf.urls.static import static
 from . import views
 from .views import RegisterView, LoginView, LogoutView, UserManagementView, UserStatsView, AdminSignupView, \
     ProjectAPIView, ProjectUploadDocumentAPIView, ProjectUpdateStatusAPIView, HelpRequestAPIView, \
-    HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView
+    HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
+    ContractViewDownloadAPIView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -39,6 +40,7 @@ urlpatterns = [
     # Contract endpoints
     path('contracts/', ContractAPIView.as_view(), name='contract-list'),
     path('contracts/<str:proposal_type>/<int:proposal_id>/', ContractAPIView.as_view(),name='contract-detail'),
+    path('contracts/<int:contract_id>/<str:action>/', ContractViewDownloadAPIView.as_view(), name='contract-view-download'),
 
     # Collaboration endpoints
     path('collaborations/', CollaborationAPIView.as_view(), name='collaboration-list'),

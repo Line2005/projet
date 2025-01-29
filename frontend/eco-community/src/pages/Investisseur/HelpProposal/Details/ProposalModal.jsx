@@ -1,18 +1,6 @@
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "../../../../components/ui/dialog.jsx";
 import {Card, CardContent, CardHeader, CardTitle} from "../../../../components/ui/card.jsx";
 import {DollarSign, Wrench, Clock, Timer, Calendar, CreditCard, CalendarDays, Check, X} from "lucide-react";
-import React from "react";
 
-// const getStatusStyle = (status) => {
-//     switch (status) {
-//         case 'accepted':
-//             return 'bg-green-100 text-green-800';
-//         case 'refused':
-//             return 'bg-red-100 text-red-800';
-//         default:
-//             return 'bg-yellow-100 text-yellow-800';
-//     }
-// };
 
 const getStatusStyle = (status) => {
     const styles = {

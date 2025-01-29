@@ -5,6 +5,7 @@ import {proposalService} from "../../../Services/entrepreneur/proposalService.js
 import {Card} from "../../../components/ui/card.jsx";
 import toast from "react-hot-toast";
 import Progress from "../../../components/ui/progress.jsx";
+import ProposalProgress from "./progressBar.jsx";
 
 const HelpPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,26 +26,25 @@ const HelpPage = () => {
 
         // Extract help request details more safely
         const helpRequest = proposal.help_request || {};
-        const projectDetails = helpRequest.project || {};
-        const financialDetails = helpRequest.financial_request || {};
-
+        const helpRequestDetails = proposal.help_request_details || {};        const projectDetails = helpRequest.project || {};
 
         return {
             id: proposal.id,
             type: type,
             helpRequestId: helpRequest.id,
-            projectName: projectDetails.project_name || "Projet sans nom", // Fallback if name is missing
-            description: helpRequest.specific_need || proposal.description || "Aucune description",
-            investor: proposal.investor?.name || "Investisseur anonyme",
-            mentor: proposal.investor?.name || "Mentor anonyme",
+            projectName: helpRequestDetails.project_name || "Projet sans nom", // Fallback if name is missing
+            description: helpRequestDetails.specific_need || proposal.proposed_approach || "Aucune description",
+            investor: proposal.investor_name || "Investisseur anonyme",
+            mentor: proposal.investor_name || "Mentor anonyme",
             status: proposal.status || 'pending',
             submissionDate: new Date(proposal.created_at).toLocaleDateString(),
             // Add additional fields based on proposal type
             ...(type === 'financial' ? {
                 amount: parseFloat(proposal.investment_amount) || 0,
                 investmentType: proposal.investment_type,
-                requestedAmount: parseFloat(financialDetails.amount_requested) || 0,
+                requestedAmount: parseFloat(helpRequestDetails.amount_requested) || 0,
             } : {
+                // Technical specific fields
                 expertise: proposal.expertise,
                 duration: proposal.support_duration,
             })
@@ -104,28 +104,6 @@ const HelpPage = () => {
         }
     };
 
-    const calculateProgress = (helpRequestId, currentProposalAmount = 0) => {
-        const amountData = requestAmounts[helpRequestId] || {
-            accepted_amount: 0,
-            requested_amount: 0,
-            remaining_amount: 0
-        };
-
-        const acceptedAmount = amountData.accepted_amount || 0;
-        const totalRequested = amountData.requested_amount || 0;
-
-        if (totalRequested === 0) return { current: 0, withProposal: 0, remaining: 0 };
-
-        const progress = (acceptedAmount / totalRequested) * 100;
-        const progressWithCurrent = ((acceptedAmount + currentProposalAmount) / totalRequested) * 100;
-
-        return {
-            current: progress,
-            withProposal: progressWithCurrent,
-            remaining: amountData.remaining_amount || 0
-        };
-    };
-
     const handleLogout = async () => {
         if (isLoggingOut) return;
 
@@ -166,14 +144,18 @@ const HelpPage = () => {
             if (searchQuery) {
                 const searchLower = searchQuery.toLowerCase();
                 return (
-                    proposal.help_request_details?.specific_need.toLowerCase().includes(searchLower) ||
-                    proposal.investor_name.toLowerCase().includes(searchLower)
+                    proposal.description.toLowerCase().includes(searchLower) ||
+                    proposal.projectName.toLowerCase().includes(searchLower) ||
+                    (proposal.type === 'financial' ? proposal.investor : proposal.mentor).toLowerCase().includes(searchLower)
                 );
             }
             return true;
         });
     };
 
+    const renderProgressBar = (proposal) => {
+        return <ProposalProgress proposal={proposal} requestAmounts={requestAmounts} />;
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
@@ -358,23 +340,8 @@ const HelpPage = () => {
                                                 {proposal.description}
                                             </p>
 
-                                            {proposal.type === 'financial' && (
-                                                <div className="mb-4">
-                                                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                                                        <span>Montant proposé: {proposal.amount.toLocaleString()}€</span>
-                                                        <span>Demandé: {proposal.requestedAmount.toLocaleString()}€</span>
-                                                    </div>
-                                                    <Progress
-                                                        value={calculateProgress(proposal.helpRequestId,
-                                                            proposal.status === 'pending' ? proposal.amount : 0).withProposal}
-                                                        className="h-2"
-                                                    />
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        Reste à
-                                                        financer: {calculateProgress(proposal.helpRequestId).remaining.toLocaleString()}€
-                                                    </div>
-                                                </div>
-                                            )}
+                                            {proposal.type === 'financial' && renderProgressBar(proposal)}
+                                            {/*)}*/}
 
                                             <div className="space-y-2 mb-4">
                                                 <div className="flex items-center text-gray-600">
