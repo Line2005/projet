@@ -199,11 +199,6 @@ const HelpRequestsListPage = () => {
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>
                         </a>
-                        <a href="#"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
-                            <BarChart2 className="h-5 w-5"/>
-                            <span>Tableau de bord</span>
-                        </a>
                         <a href="/entrepreneur/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                             <Settings className="h-5 w-5"/>
@@ -218,7 +213,7 @@ const HelpRequestsListPage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? ' Déconnexion...' : 'Déconnexion'}
+                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
                     </button>
                 </div>
             </aside>

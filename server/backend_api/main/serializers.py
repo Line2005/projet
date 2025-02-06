@@ -1,10 +1,13 @@
+import decimal
+import json
+
 from rest_framework import serializers
 
 # Create your serializers here.
 from django.conf import settings
 from rest_framework import serializers
 from .models import User, Entrepreneur, Organization, Investor, Project, ProjectDocument, TechnicalRequest, HelpRequest, \
-    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract
+    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, Announcement, Event
 
 
 class EntrepreneurSerializer(serializers.ModelSerializer):
@@ -418,3 +421,125 @@ class CollaborationStatsSerializer(serializers.Serializer):
     financial_collaborations = serializers.IntegerField()
     technical_collaborations = serializers.IntegerField()
     total_investment_amount = serializers.DecimalField(max_digits=15, decimal_places=2)
+
+#Organisation announcement
+class AnnouncementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Announcement
+        fields = '__all__'
+        read_only_fields = ('organization', 'created_at', 'updated_at')
+
+    def validate_requirements(self, value):
+        """
+        Validate the requirements field.
+        """
+        try:
+            # If value is already a list
+            if isinstance(value, list):
+                # Clean and filter the requirements
+                requirements = [str(req).strip() for req in value if str(req).strip()]
+                return json.dumps(requirements)
+
+            # If value is a string, try to parse it as JSON
+            if isinstance(value, str):
+                parsed_value = json.loads(value)
+                if not isinstance(parsed_value, list):
+                    raise serializers.ValidationError("Requirements must be a list")
+                # Clean and filter the requirements
+                requirements = [str(req).strip() for req in parsed_value if str(req).strip()]
+                return json.dumps(requirements)
+
+            raise serializers.ValidationError("Invalid requirements format")
+        except json.JSONDecodeError:
+            raise serializers.ValidationError("Requirements must be a valid JSON array")
+
+    def validate(self, data):
+        """
+        Object-level validation.
+        """
+        # Validate required fields
+        if self.partial:
+            # For PATCH requests, only validate fields that are being updated
+            required_fields = []
+            if 'type' in data:
+                required_fields.extend(['title', 'description'])
+
+            for field in required_fields:
+                if field not in data:
+                    if not getattr(self.instance, field, None):
+                        raise serializers.ValidationError({
+                            field: f"{field} is required"
+                        })
+        else:
+            # For PUT/POST requests, validate all required fields
+            required_fields = ['title', 'description', 'type']
+            for field in required_fields:
+                if not data.get(field):
+                    raise serializers.ValidationError({
+                        field: f"{field} is required"
+                    })
+
+        # Type-specific validation
+        announcement_type = data.get('type', getattr(self.instance, 'type', None))
+        if announcement_type:
+            if announcement_type == 'funding':
+                budget = data.get('budget', getattr(self.instance, 'budget', None))
+                if not budget and budget != 0:
+                    raise serializers.ValidationError({
+                        "budget": "Budget is required for funding announcements"
+                    })
+                try:
+                    from decimal import Decimal
+                    budget_value = Decimal(str(budget))
+                    if budget_value <= 0:
+                        raise serializers.ValidationError({
+                            "budget": "Budget must be greater than 0"
+                        })
+                except (TypeError, ValueError, decimal.InvalidOperation):
+                    raise serializers.ValidationError({
+                        "budget": "Invalid budget value"
+                    })
+
+            elif announcement_type in ['training', 'partnership']:
+                requirements = data.get('requirements', getattr(self.instance, 'requirements', None))
+                if not requirements:
+                    raise serializers.ValidationError({
+                        "requirements": "Requirements are required for training and partnership announcements"
+                    })
+
+        return data
+
+#Association events
+class EventSerializer(serializers.ModelSerializer):
+    """
+    Enhanced serializer for Event model with comprehensive validation
+    """
+    class Meta:
+        model = Event
+        fields = [
+            'id', 'title', 'type', 'description', 'image',
+            'date', 'time', 'location', 'capacity',
+            'registration_deadline', 'status'
+        ]
+        extra_kwargs = {
+            'image': {'required': False},
+        }
+
+    def validate(self, data):
+        """
+        Cross-field validation
+        """
+        # Validate registration deadline
+        if 'registration_deadline' in data and 'date' in data:
+            if data['registration_deadline'] >= data['date']:
+                raise serializers.ValidationError({
+                    'registration_deadline': 'Registration deadline must be before the event date'
+                })
+
+        # Validate capacity
+        if 'capacity' in data and data['capacity'] < 1:
+            raise serializers.ValidationError({
+                'capacity': 'Capacity must be at least 1'
+            })
+
+        return data

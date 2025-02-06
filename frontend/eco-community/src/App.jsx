@@ -57,36 +57,36 @@ function App() {
                 // Entrepreneur
                 //Role base authentication
                 <Route path="/entrepreneur/project" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <ProjectsPage /> </ProtectedRoute> }/>
-                <Route path="/entrepreneur/create-project" element={<ProjectCreation />} />
-                <Route path="/entrepreneur/request" element={<HelpRequestPage />} />
-                <Route path="/entrepreneur/demandes" element={<HelpRequestsListPage />} />
-                <Route path="/entrepreneur/help" element={<HelpPage />} />
-                <Route path="/entrepreneur/opportunity" element={<OpportunityPage />} />
-                <Route path="/entrepreneur/collaborators" element={<CollaboratorPage />} />
-                <Route path="/entrepreneur/settings" element={<SettingsPage />} />
+                <Route path="/entrepreneur/create-project" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <ProjectCreation /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/request" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <HelpRequestPage /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/demandes" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <HelpRequestsListPage /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/help" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <HelpPage /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/opportunity" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <OpportunityPage /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/collaborators" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <CollaboratorPage /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/settings" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <SettingsPage /> </ProtectedRoute>} />
 
                 // Investors part
                 //Role base authentication
                 <Route path="/investors/project" element={ <ProtectedRoute allowedRoles={['investor']}> <ProjectRequestsInvestorPage /> </ProtectedRoute>} />
-                <Route path="/investors/financialHelp" element={<FinancialHelpProposalPage />} />
-                <Route path="/investors/technicalHelp" element={<TechnicalHelpProposalPage />} />
-                <Route path="/investors/proposals" element={<HelpProposalsPage />} />
-                <Route path="/investors/opportunity" element={<AnnouncePage />} />
-                <Route path="/investors/collaborators" element={<InvestorCollaboratorsPage />} />
+                <Route path="/investors/financialHelp" element={ <ProtectedRoute allowedRoles={['investor']}> <FinancialHelpProposalPage /> </ProtectedRoute>} />
+                <Route path="/investors/technicalHelp" element={ <ProtectedRoute allowedRoles={['investor']}> <TechnicalHelpProposalPage /> </ProtectedRoute>} />
+                <Route path="/investors/proposals" element={ <ProtectedRoute allowedRoles={['investor']}> <HelpProposalsPage /> </ProtectedRoute>} />
+                <Route path="/investors/opportunity" element={ <ProtectedRoute allowedRoles={['investor']}> <AnnouncePage /> </ProtectedRoute>} />
+                <Route path="/investors/collaborators" element={ <ProtectedRoute allowedRoles={['investor']}><InvestorCollaboratorsPage /> </ProtectedRoute>} />
 
 
                 // ONG Association Parts
                 //Role base authentication
                 <Route path="/association/announce" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <NGOAnnouncementsPage /> </ProtectedRoute>} />
-                <Route path="/association/create-announcement" element={<CreateAnnouncementPage />} />
-                <Route path="/association/events" element={<NGOEventsPage />} />
-                <Route path="/association/create-events" element={<CreateEventPage />} />
-                <Route path="/association/editing-events" element={<EditEventPage />} />
+                <Route path="/association/create-announcement" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <CreateAnnouncementPage /> </ProtectedRoute>} />
+                <Route path="/association/events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <NGOEventsPage /> </ProtectedRoute>} />
+                <Route path="/association/create-events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <CreateEventPage /> </ProtectedRoute>} />
+                <Route path="/association/editing-events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <EditEventPage /> </ProtectedRoute>} />
 
                 // Admin Parts
                 //Role base authentication
-                <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
-                <Route path="/admin/project" element={<AdminProject />} />
+                <Route path="/admin/dashboard" element={ <ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />
+                <Route path="/admin/project" element={ <ProtectedRoute allowedRoles={['admin']}> <AdminProject /> </ProtectedRoute>} />
 
             </Routes>
         </BrowserRouter>

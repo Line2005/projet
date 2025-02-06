@@ -5,7 +5,7 @@ from . import views
 from .views import RegisterView, LoginView, LogoutView, UserManagementView, UserStatsView, AdminSignupView, \
     ProjectAPIView, ProjectUploadDocumentAPIView, ProjectUpdateStatusAPIView, HelpRequestAPIView, \
     HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
-    ContractViewDownloadAPIView
+    ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -44,6 +44,18 @@ urlpatterns = [
 
     # Collaboration endpoints
     path('collaborations/', CollaborationAPIView.as_view(), name='collaboration-list'),
+
+    #Announcement
+    path('announcements/', AnnouncementAPIView.as_view(), name='announcements'),
+    path('announcements/<int:pk>/', AnnouncementAPIView.as_view(), name='announcement-detail'),
+
+    # Event
+    path('events/', EventManagementView.as_view(), name='event-create'),
+    path('events/<int:event_id>/', EventManagementView.as_view(), name='event-detail'),
+
+    # Update and delete a specific event
+    path('events/<int:event_id>/update/', EventManagementView.as_view(), name='event-update'),
+    path('events/<int:event_id>/delete/', EventManagementView.as_view(), name='event-delete'),
 
     #Admin sign up
     path('admin/signup', AdminSignupView.as_view(), name='admin-signup'),

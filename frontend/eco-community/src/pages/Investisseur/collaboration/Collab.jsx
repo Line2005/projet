@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { logoutUser } from "../../../Services/auth.js";
 import {FileText, HelpCircle, Info, Users, Calendar, BarChart2, Settings, LogOut, Menu, X, DollarSign, Search, Mail, Phone, MessageCircle, Filter, ChevronDown, ChevronUp, Eye, Download } from 'lucide-react';
 import {Card} from "../../../components/ui/card.jsx";
@@ -101,11 +101,6 @@ const InvestorCollaboratorsPage = () => {
                            className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg">
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>
-                        </a>
-                        <a href="/Dashboard/Dashboard"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <BarChart2 className="h-5 w-5"/>
-                            <span>Tableau de bord</span>
                         </a>
                         <a href="/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">

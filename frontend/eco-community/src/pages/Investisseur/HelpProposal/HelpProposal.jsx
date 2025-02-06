@@ -193,11 +193,6 @@ const HelpProposalsPage = () => {
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>
                         </a>
-                        <a href="/dashboard"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <BarChart2 className="h-5 w-5"/>
-                            <span>Tableau de bord</span>
-                        </a>
                         <a href="/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Settings className="h-5 w-5"/>

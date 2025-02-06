@@ -14,7 +14,6 @@ import logging
 
 from .contract import ContractHandler
 
-
 class User(AbstractUser):
     phone = models.CharField(max_length=15)
     role = models.CharField(
@@ -369,3 +368,99 @@ class Collaboration(models.Model):
 
     class Meta:
         unique_together = ['entrepreneur', 'investor', 'project', 'contract']
+
+
+#Anouncement creation
+class Announcement(models.Model):
+    ANNOUNCEMENT_TYPES = [
+        ('funding', 'Financement'),
+        ('training', 'Formation'),
+        ('partnership', 'Partenariat'),
+        ('event', 'Événement'),
+        ('opportunity', 'Opportunité'),
+    ]
+
+    STATUS_CHOICES = [
+        ('draft', 'Brouillon'),
+        ('published', 'Publié'),
+    ]
+
+    organization = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='announcements')
+    title = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, choices=ANNOUNCEMENT_TYPES)
+    description = models.TextField()
+    location = models.CharField(max_length=100)
+    deadline = models.DateField()
+    budget = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    requirements = models.JSONField(default=list)
+    contact_email = models.EmailField()
+    contact_phone = models.CharField(max_length=20, blank=True)
+    image = models.ImageField(upload_to='announcements/', null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'announcements'
+        ordering = ['-created_at']
+
+#Event creation
+class Event(models.Model):
+    """
+    Model to represent events created by organizations (NGOs/Associations)
+    """
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name='events'
+    )
+    title = models.CharField(max_length=200)
+
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('published', 'Published')
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft'
+    )
+
+    EVENT_TYPES = [
+        ('forum', 'forum'),
+        ('workshop', 'workshop'),
+        ('webinars', 'webinars'),
+        ('conference', 'conference')
+    ]
+    type = models.CharField(max_length=20, choices=EVENT_TYPES)
+
+    description = models.TextField()
+    image = models.ImageField(
+        upload_to='events/',
+        null=True,
+        blank=True
+    )
+
+    date = models.DateField()
+    time = models.TimeField()
+    location = models.CharField(max_length=300)
+
+    capacity = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)]
+    )
+
+    registration_deadline = models.DateField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'events'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} - {self.date}"
+
+    @property
+    def is_draft(self):
+        return self.status == 'draft'

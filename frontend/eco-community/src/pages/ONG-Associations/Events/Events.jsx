@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from "../../../Services/auth.js";
 import {
@@ -15,46 +15,47 @@ import {
     Eye,
     Clock,
     LogOut,
-    Settings
+    Settings, X, CheckCircle
 } from 'lucide-react';
+import api from "../../../Services/api.js";
+import {Card} from "../../../components/ui/card.jsx";
+import EventImage from "./EventImage.jsx";
+import EventDetailsModal from "./EventDetails.jsx";
+import EditEventModal from "./editing/EditingEvents.jsx";
 
 const NGOEventsPage = () => {
     const navigate = useNavigate();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [events, setEvents] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [editingEvent, setEditingEvent] = useState(null);
 
     const handleCreateEvent = () => {
         navigate('/association/create-events');
     };
 
-    // Sample events data
-    const myEvents = [
-        {
-            id: 1,
-            title: "Forum de l'Entrepreneuriat 2024",
-            type: "forum",
-            description: "Grand rassemblement des entrepreneurs et des structures d'accompagnement.",
-            date: "2024-03-15",
-            time: "09:00",
-            location: "Palais des Congrès, Yaoundé",
-            status: "upcoming",
-            participants: 45,
-            capacity: 100,
-            imageUrl: "/api/placeholder/400/250"
-        },
-        {
-            id: 2,
-            title: "Atelier Formation Business Plan",
-            type: "workshop",
-            description: "Formation pratique sur l'élaboration d'un business plan efficace.",
-            date: "2024-04-01",
-            time: "14:00",
-            location: "Tech Hub Douala",
-            status: "draft",
-            participants: 0,
-            capacity: 30,
-            imageUrl: "/api/placeholder/400/250"
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
+
+    const fetchEvents = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get('/events/');
+            setEvents(response.data);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching events:', err);
+            setError(err.response?.data?.detail || 'Failed to fetch events');
+        } finally {
+            setLoading(false);
         }
-    ];
+    };
 
     const handleLogout = async () => {
         if (isLoggingOut) return;
@@ -69,20 +70,74 @@ const NGOEventsPage = () => {
         }
     };
 
+    const handleUpdateEvent = async (updatedEventData) => {
+        try {
+            const response = await api.put(`/events/${updatedEventData.id}/`, updatedEventData);
+
+            // Update the events list with the new data
+            setEvents(events.map(event =>
+                event.id === updatedEventData.id ? response.data : event
+            ));
+
+            // Close the edit modal
+            setEditingEvent(null);
+        } catch (error) {
+            console.error('Error updating event:', error);
+            // You might want to show an error message to the user
+        }
+    };
+
+    const handlePublishEvent = async (id) => {
+        try {
+            const response = await api.patch(`/events/${id}/`, {
+                status: 'published'
+            });
+
+            // Update local state with the response data
+            setEvents(events.map(event =>
+                event.id === id ? response.data : event
+            ));
+
+            // Optional: Show success message
+            // You might want to add a toast or notification system
+        } catch (err) {
+            console.error('Error publishing announcement:', err.response?.data?.detail || err.message);
+            // Optional: Show error message to user
+            alert(err.response?.data?.detail || "Une erreur s'est produite lors de la publication de l'annonce");
+        }
+    };
+
+    const handleDeleteEvent = async (id) => {
+        if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette annonce ?')) {
+            return;
+        }
+
+        try {
+            // Delete announcement using Axios
+            await api.delete(`/events/${id}/`);
+
+            // Refresh the announcements list
+            fetchEvents();
+        } catch (err) {
+            console.error('Error deleting announcement:', err.response?.data?.message || err.message);
+            // Optional: Display an error message to the user
+        }
+    };
+
+    // In NGOAnnouncementsPage component
+    const handleEditEvent = (event) => {
+        setEditingEvent(event); // Pass the entire announcement object, not just the ID
+    };
+
+
     const getStatusBadge = (status) => {
         const statusStyles = {
-            upcoming: "bg-blue-100 text-blue-800",
-            ongoing: "bg-green-100 text-green-800",
-            completed: "bg-gray-100 text-gray-800",
             draft: "bg-yellow-100 text-yellow-800",
-            cancelled: "bg-red-100 text-red-800"
+            published: "bg-green-100 text-green-800",
         };
         const statusLabels = {
-            upcoming: "À venir",
-            ongoing: "En cours",
-            completed: "Terminé",
             draft: "Brouillon",
-            cancelled: "Annulé"
+            published: "Publié"
         };
         return (
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusStyles[status]}`}>
@@ -90,6 +145,20 @@ const NGOEventsPage = () => {
             </span>
         );
     };
+
+    const getEventTypeLabel = (type) => {
+        const typeLabels = {
+            forum: "Forum",
+            workshop: "Atelier",
+            webinars: "Webinaire",
+            conference: "Conférence"
+        };
+        return typeLabels[type] || type;
+    };
+
+    const filteredEvents = events
+        .filter(event => event.title.toLowerCase().includes(searchTerm.toLowerCase()))
+        .filter(event => statusFilter === 'all' || event.status === statusFilter);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
@@ -101,11 +170,6 @@ const NGOEventsPage = () => {
                         Eco Community
                     </h2>
                     <nav className="space-y-2">
-                        <a href="/ngo/dashboard"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <FileText className="h-5 w-5"/>
-                            <span>Tableau de bord</span>
-                        </a>
                         <a href="/association/announce"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Bell className="h-5 w-5"/>
@@ -153,116 +217,191 @@ const NGOEventsPage = () => {
                         </button>
                     </div>
 
-                    {/* Search and Filter Bar */}
-                    <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-1 relative">
-                                <input
-                                    type="text"
-                                    placeholder="Rechercher un événement..."
-                                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500"
-                                />
-                                <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
-                            </div>
-                            <div className="flex gap-2">
-                                <select className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500">
-                                    <option>Tous les statuts</option>
-                                    <option>À venir</option>
-                                    <option>En cours</option>
-                                    <option>Terminé</option>
-                                    <option>Brouillon</option>
-                                </select>
-                                <button className="p-3 border rounded-lg hover:bg-gray-50">
-                                    <Filter className="h-5 w-5 text-gray-600" />
+                    {/* Loading State */}
+                    {loading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+                        </div>
+                    ) : error ? (
+                        <Card className="p-8 text-center">
+                            <div className="max-w-md mx-auto">
+                                <X className="h-16 w-16 text-red-400 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">Erreur</h3>
+                                <p className="text-gray-600">{error}</p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
+                                >
+                                    Réessayer
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        </Card>
+                    ) : (
+                        <>
 
-                    {/* Events List */}
-                    <div className="space-y-4">
-                        {myEvents.map((event) => (
-                            <div key={event.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-                                <div className="flex flex-col md:flex-row">
-                                    <div className="md:w-64">
-                                        <img
-                                            src={event.imageUrl}
-                                            alt={event.title}
-                                            className="h-full w-full object-cover"
+                            {/* Search and Filter Bar */}
+                            <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+                                <div className="flex flex-col md:flex-row gap-4">
+                                    <div className="flex-1 relative">
+                                        <input
+                                            type="text"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            placeholder="Rechercher un événement..."
+                                            className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500"
                                         />
+                                        <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"/>
                                     </div>
-                                    <div className="flex-1 p-6">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                                    {event.title}
-                                                </h3>
-                                                {getStatusBadge(event.status)}
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <button className="p-2 hover:bg-gray-100 rounded-lg">
-                                                    <Eye className="h-5 w-5 text-gray-600" />
-                                                </button>
-                                                <button className="p-2 hover:bg-gray-100 rounded-lg">
-                                                    <Edit className="h-5 w-5 text-gray-600" />
-                                                </button>
-                                                <button className="p-2 hover:bg-gray-100 rounded-lg">
-                                                    <Trash2 className="h-5 w-5 text-red-600" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <p className="text-gray-600 mt-2 mb-4">{event.description}</p>
-
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                            <div className="flex items-center text-gray-600">
-                                                <Calendar className="h-4 w-4 mr-2 text-emerald-500" />
-                                                <span className="text-sm">{event.date}</span>
-                                            </div>
-                                            <div className="flex items-center text-gray-600">
-                                                <Clock className="h-4 w-4 mr-2 text-emerald-500" />
-                                                <span className="text-sm">{event.time}</span>
-                                            </div>
-                                            <div className="flex items-center text-gray-600">
-                                                <MapPin className="h-4 w-4 mr-2 text-emerald-500" />
-                                                <span className="text-sm">{event.location}</span>
-                                            </div>
-                                            <div className="flex items-center text-gray-600">
-                                                <Users className="h-4 w-4 mr-2 text-emerald-500" />
-                                                <span className="text-sm">{event.participants}/{event.capacity} participants</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <button className="flex-1 bg-emerald-600 text-white py-2.5 px-4 rounded-lg hover:bg-emerald-700">
-                                                Gérer les inscriptions
-                                            </button>
-                                            <button className="flex-1 border border-emerald-600 text-emerald-600 py-2.5 px-4 rounded-lg hover:bg-emerald-50">
-                                                Modifier l'événement
-                                            </button>
-                                        </div>
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            className="border rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500"
+                                        >
+                                            <option value="all">Tous les statuts</option>
+                                            <option value="draft">Brouillon</option>
+                                            <option value="published">Publié</option>
+                                        </select>
+                                        <button className="p-3 border rounded-lg hover:bg-gray-50">
+                                            <Filter className="h-5 w-5 text-gray-600"/>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Empty State */}
-                    {myEvents.length === 0 && (
-                        <div className="text-center py-12">
-                            <div className="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto">
-                                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun événement</h3>
-                                <p className="text-gray-600 mb-6">Vous n'avez pas encore créé d'événements</p>
-                                <button
-                                    onClick={handleCreateEvent}
-                                    className="inline-flex items-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                                >
-                                    <Plus className="h-5 w-5 mr-2" />
-                                    Créer un événement
-                                </button>
+                            {/* Events List */}
+                            <div className="space-y-4">
+                                {filteredEvents.map((event) => (
+                                    <div key={event.id} className="bg-white rounded-xl shadow-md overflow-hidden">
+                                        <div className="flex flex-col md:flex-row">
+                                            <div className="md:w-64 h-48 md:h-auto">
+                                                {event.image ? (
+                                                    <div className="h-full w-full">
+                                                        <EventImage
+                                                            image={event.image}
+                                                            title={event.title}
+                                                            className="h-full"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        className="h-full w-full bg-gray-200 flex items-center justify-center">
+                                                        <Calendar className="h-12 w-12 text-gray-400"/>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 p-6">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                                            {event.title}
+                                                        </h3>
+                                                        <div className="flex gap-2 items-center">
+                                                            {getStatusBadge(event.status)}
+                                                            <span className="text-sm text-gray-600">
+                                                        {getEventTypeLabel(event.type)}
+                                                    </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            className="p-2 hover:bg-gray-100 rounded-lg"
+                                                            onClick={() => setSelectedEvent(event)}
+                                                        >
+                                                            <Eye className="h-5 w-5 text-gray-600"/>
+                                                        </button>
+                                                        {event.status === 'draft' && (
+                                                            <button
+                                                                className="p-2 hover:bg-emerald-100 rounded-lg"
+                                                                onClick={() => handlePublishEvent(event.id)}
+                                                            >
+                                                                <CheckCircle className="h-5 w-5 text-emerald-600"/>
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            className="p-2 hover:bg-gray-100 rounded-lg"
+                                                            onClick={() => handleDeleteEvent(event.id)}
+                                                        >
+                                                            <Trash2 className="h-5 w-5 text-red-600"/>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-gray-600 mt-2 mb-4">{event.description}</p>
+
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                                    <div className="flex items-center text-gray-600">
+                                                        <Calendar className="h-4 w-4 mr-2 text-emerald-500"/>
+                                                        <span
+                                                            className="text-sm">{new Date(event.date).toLocaleDateString()}</span>
+                                                    </div>
+                                                    <div className="flex items-center text-gray-600">
+                                                        <Clock className="h-4 w-4 mr-2 text-emerald-500"/>
+                                                        <span className="text-sm">{event.time}</span>
+                                                    </div>
+                                                    <div className="flex items-center text-gray-600">
+                                                        <MapPin className="h-4 w-4 mr-2 text-emerald-500"/>
+                                                        <span className="text-sm">{event.location}</span>
+                                                    </div>
+                                                    <div className="flex items-center text-gray-600">
+                                                        <Users className="h-4 w-4 mr-2 text-emerald-500"/>
+                                                        <span className="text-sm">{event.capacity} places</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        className="flex-1 bg-emerald-600 text-white py-2.5 px-4 rounded-lg hover:bg-emerald-700">
+                                                        Gérer les inscriptions
+                                                    </button>
+                                                    <button
+                                                        className="flex-1 border border-emerald-600 text-emerald-600 py-2.5 px-4 rounded-lg hover:bg-emerald-50"
+                                                        onClick={() => handleEditEvent(event)}
+                                                    >
+                                                        Modifier l'événement
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
+
+                            {/* Empty State */}
+                            {filteredEvents.length === 0 && (
+                                <div className="text-center py-12">
+                                    <div className="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto">
+                                        <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">Aucun événement</h3>
+                                        <p className="text-gray-600 mb-6">
+                                            {searchTerm || statusFilter !== 'all'
+                                                ? "Aucun événement ne correspond à vos critères de recherche"
+                                                : "Vous n'avez pas encore créé d'événements"}
+                                        </p>
+                                        <button
+                                            onClick={handleCreateEvent}
+                                            className="inline-flex items-center px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                                        >
+                                            <Plus className="h-5 w-5 mr-2" />
+                                            Créer un événement
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            {selectedEvent && (
+                                <EventDetailsModal
+                                    event={selectedEvent}
+                                    onClose={() => setSelectedEvent(null)}
+                                />
+                            )}
+                            {editingEvent && (
+                                <EditEventModal
+                                    event={editingEvent}
+                                    onClose={() => setEditingEvent(null)}
+                                    onUpdate={handleUpdateEvent}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
             </div>

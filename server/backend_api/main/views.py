@@ -1,5 +1,11 @@
+import base64
+import json
 import os
+import traceback
+import uuid
 
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.http import FileResponse
 from django.shortcuts import render
 
@@ -18,6 +24,7 @@ from django.db.models import Count, Q, Sum  # Added Q here
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from .contract import ContractHandler
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 import pdfkit
 import logging
@@ -26,12 +33,12 @@ import logging
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from .models import Organization, Entrepreneur, Investor, ProjectDocument, Project, HelpRequest, TechnicalRequest, \
-    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, User
+    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, User, Announcement, Event
 from .permission import IsProposalOwnerOrRequestEntrepreneur
 from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpdateSerializer, UserListSerializer, \
     UserCreateSerializer, InvestorSerializer, ProjectSerializer, FinancialRequestSerializer, TechnicalRequestSerializer, \
     HelpRequestSerializer, TechnicalProposalSerializer, FinancialProposalSerializer, CollaborationSerializer, \
-    ContractSerializer, CollaborationStatsSerializer
+    ContractSerializer, CollaborationStatsSerializer, AnnouncementSerializer, EventSerializer
 
 
 class RegisterView(APIView):
@@ -1120,3 +1127,355 @@ class ContractViewDownloadAPIView(APIView):
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+#Organisation announcement
+class AnnouncementAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request):
+        """
+        Create a new announcement with detailed error logging.
+        """
+        try:
+            # Log request data for debugging
+            logger.debug(f"Request data: {request.data}")
+            logger.debug(f"Request FILES: {request.FILES}")
+
+            if request.user.role != 'ONG-Association':
+                return Response(
+                    {"detail": "Only organizations can create announcements"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Get the organization
+            organization = get_object_or_404(Organization, user=request.user)
+
+            # Create a mutable copy of the data
+            mutable_data = request.data.copy()
+
+            # Handle requirements field
+            if 'requirements' in mutable_data:
+                try:
+                    # If it's already a string, try to validate it's proper JSON
+                    requirements_str = mutable_data['requirements']
+                    if isinstance(requirements_str, str):
+                        # Try to parse and re-serialize to ensure valid JSON
+                        import json
+                        requirements_list = json.loads(requirements_str)
+                        if not isinstance(requirements_list, list):
+                            requirements_list = [requirements_list]
+                        # Store back as a JSON string
+                        mutable_data['requirements'] = json.dumps(requirements_list)
+                except json.JSONDecodeError as e:
+                    logger.error(f"Requirements JSON decode error: {str(e)}")
+                    return Response(
+                        {"requirements": "Invalid JSON format"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            # Handle image file
+            if 'image' in request.FILES:
+                mutable_data['image'] = request.FILES['image']
+
+            # Create serializer with processed data
+            serializer = AnnouncementSerializer(data=mutable_data)
+
+            if not serializer.is_valid():
+                logger.error(f"Serializer errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Save announcement
+            try:
+                announcement = serializer.save(organization=organization)
+                logger.info(f"Announcement created successfully: {announcement.id}")
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                logger.error(f"Error saving announcement: {str(e)}")
+                raise
+
+        except Exception as e:
+            logger.error(f"Unexpected error in announcement creation: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return Response(
+                {"detail": f"An unexpected error occurred: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def get(self, request):
+        """
+        Retrieve announcements with type-specific filtering options.
+        """
+        announcement_type = request.query_params.get('type')
+        if request.user.role == 'ONG-Association':
+            queryset = Announcement.objects.filter(organization__user=request.user)
+        else:
+            queryset = Announcement.objects.all()
+
+        # Apply type filter if specified
+        if announcement_type:
+            queryset = queryset.filter(type=announcement_type)
+
+        serializer = AnnouncementSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        """
+        Delete announcement and its associated image.
+        """
+        try:
+            announcement = get_object_or_404(Announcement, pk=pk, organization__user=request.user)
+
+            # Delete associated image if it exists
+            if announcement.image:
+                try:
+                    default_storage.delete(announcement.image.path)
+                except Exception as e:
+                    # Log the error but continue with announcement deletion
+                    print(f"Error deleting image: {str(e)}")
+
+            announcement.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def patch(self, request, pk=None):
+        """
+        Update an announcement with improved error handling and validation.
+        """
+        try:
+            # Get the announcement instance
+            announcement = get_object_or_404(Announcement, pk=pk, organization__user=request.user)
+
+            # Create a mutable copy of the data
+            mutable_data = request.data.copy()
+
+            # Handle requirements field
+            if 'requirements' in mutable_data:
+                try:
+                    # Handle both string and list inputs for requirements
+                    if isinstance(mutable_data['requirements'], str):
+                        import json
+                        requirements = json.loads(mutable_data['requirements'])
+                        if not isinstance(requirements, list):
+                            return Response(
+                                {"requirements": "Requirements must be a list"},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                    elif isinstance(mutable_data['requirements'], list):
+                        requirements = mutable_data['requirements']
+                    else:
+                        return Response(
+                            {"requirements": "Invalid requirements format"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                    # Validate each requirement
+                    if not all(isinstance(req, str) for req in requirements):
+                        return Response(
+                            {"requirements": "All requirements must be strings"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                    mutable_data['requirements'] = requirements
+                except json.JSONDecodeError:
+                    return Response(
+                        {"requirements": "Invalid JSON format for requirements"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            # Handle image field
+            if 'image' in request.FILES:
+                mutable_data['image'] = request.FILES['image']
+
+            # Create serializer with the announcement instance and processed data
+            serializer = AnnouncementSerializer(
+                announcement,
+                data=mutable_data,
+                partial=True  # Allow partial updates
+            )
+
+            if not serializer.is_valid():
+                logger.error(f"Validation errors: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            # Save the updated announcement
+            updated_announcement = serializer.save()
+
+            # Return the updated data
+            return Response(
+                AnnouncementSerializer(updated_announcement).data,
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logger.error(f"Error updating announcement: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return Response(
+                {"detail": "An error occurred while updating the announcement"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def update_status(self, request, announcement):
+        """
+        Handle status updates specifically
+        """
+        try:
+            new_status = request.data.get('status')
+
+            # Validate the status
+            if new_status not in dict(Announcement.STATUS_CHOICES):
+                return Response(
+                    {"status": "Invalid status value"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Validate status transition
+            if announcement.status == 'published' and new_status == 'draft':
+                return Response(
+                    {"status": "Cannot change status from published to draft"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Update the status
+            announcement.status = new_status
+            announcement.save(update_fields=['status'])
+
+            return Response(
+                AnnouncementSerializer(announcement).data,
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            logger.error(f"Error updating announcement status: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return Response(
+                {"detail": "An error occurred while updating the status"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+#Organisation event
+class EventManagementView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_organization(self, request):
+        if request.user.role != 'ONG-Association':
+            raise PermissionError("Only organizations can manage events")
+        return request.user.organization
+
+    def process_image(self, base64_data):
+        try:
+            if not base64_data:
+                return None
+
+            image_data = base64.b64decode(base64_data)
+            if len(image_data) > 5 * 1024 * 1024:
+                raise ValueError("Image size should not exceed 5MB")
+
+            filename = f"event_image_{uuid.uuid4()}.png"
+            return ContentFile(image_data, name=filename)
+        except Exception as e:
+            raise ValueError(f"Invalid image data: {str(e)}")
+
+    def post(self, request):
+        try:
+            organization = self.get_organization(request)
+            data = request.data.copy()
+
+            # Process image if present
+            image_data = data.pop('image', None)
+            try:
+                if image_data:
+                    image_file = self.process_image(image_data)
+                    data['image'] = image_file
+            except ValueError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = EventSerializer(data=data, context={'request': request, 'organization': organization})
+            if serializer.is_valid():
+                event = serializer.save(organization=organization)
+                return Response(EventSerializer(event).data, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get(self, request, event_id=None):
+        try:
+            organization = self.get_organization(request)
+            if event_id:
+                event = get_object_or_404(Event, id=event_id, organization=organization)
+                return Response(EventSerializer(event).data)
+
+            events = Event.objects.filter(organization=organization)
+            return Response(EventSerializer(events, many=True).data)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    def put(self, request, event_id):
+        try:
+            organization = self.get_organization(request)
+            event = get_object_or_404(Event, id=event_id, organization=organization)
+            data = request.data.copy()
+
+            # Process image if present
+            image_data = data.pop('image', None)
+            try:
+                if image_data:
+                    image_file = self.process_image(image_data)
+                    if event.image:
+                        event.image.delete(save=False)
+                    data['image'] = image_file
+            except ValueError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = EventSerializer(event, data=data, context={'request': request})
+            if serializer.is_valid():
+                updated_event = serializer.save()
+                return Response(EventSerializer(updated_event).data)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    def patch(self, request, event_id):
+        try:
+            organization = self.get_organization(request)
+            event = get_object_or_404(Event, id=event_id, organization=organization)
+            data = request.data.copy()
+
+            # Process image if present
+            image_data = data.pop('image', None)
+            try:
+                if image_data:
+                    image_file = self.process_image(image_data)
+                    if event.image:
+                        event.image.delete(save=False)
+                    data['image'] = image_file
+            except ValueError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = EventSerializer(event, data=data, partial=True, context={'request': request})
+            if serializer.is_valid():
+                updated_event = serializer.save()
+                return Response(EventSerializer(updated_event).data)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    def delete(self, request, event_id):
+        try:
+            organization = self.get_organization(request)
+            event = get_object_or_404(Event, id=event_id, organization=organization)
+            if event.image:
+                event.image.delete()
+            event.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
