@@ -86,13 +86,13 @@ class Project(models.Model):
 
     SECTOR_CHOICES = [
         ('agriculture', 'Agriculture'),
-        ('technology', 'Technology'),
-        ('crafts', 'Crafts'),
+        ('technology', 'Technologie'),
+        ('crafts', 'Artisanat'),
         ('commerce', 'Commerce'),
-        ('education', 'Education'),
-        ('healthcare', 'Healthcare'),
-        ('tourism', 'Tourism'),
-        ('manufacturing', 'Manufacturing'),
+        ('education', 'Éducation'),
+        ('healthcare', 'Santé'),
+        ('tourism', 'Tourisme'),
+        ('manufacturing', 'Industrie'),
         ('services', 'Services')
     ]
 

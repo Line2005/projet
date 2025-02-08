@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Camera, Users, TrendingUp, PlusCircle } from 'lucide-react';
+import {useNavigate} from "react-router-dom";
 
 const EcoCommunity = () => {
     const [isVisible, setIsVisible] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -87,6 +89,10 @@ const EcoCommunity = () => {
         }, 16);
     };
 
+    const handleRegister = () => {
+        navigate('/register');
+    };
+
     return (
         <>
             {/* Navigation */}
@@ -135,7 +141,9 @@ const EcoCommunity = () => {
                                     </p>
                                     <div className="mt-10 sm:mt-12">
                                         <div className="sm:flex sm:justify-center lg:justify-start">
-                                            <button className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600 md:py-4 md:text-lg md:px-10">
+                                            <button className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600 md:py-4 md:text-lg md:px-10"
+                                                    onClick={handleRegister}
+                                            >
                                                 Démarrer un Projet
                                             </button>
                                             <button className="mt-3 sm:mt-0 sm:ml-3 w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-emerald-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">

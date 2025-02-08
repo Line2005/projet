@@ -30,6 +30,16 @@ export const adminService = {
     //     }
     // }
 
+    // Fetch user details by ID
+    getUserById: async (userId) => {
+        try {
+            const response = await api.get(`/admin/users/${userId}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
 
     createUser: async (userData) => {
         try {
@@ -61,9 +71,13 @@ export const adminService = {
 
     updateUser: async (userId, userData) => {
         try {
-            const response = await api.put(`/admin/users/${userId}`, userData);
+            console.log('Sending update request:', userId, userData); // Debug line
+            const response = await api.patch(`/admin/users/${userId}`, userData);
+            console.log('Update response:', response.data); // Debug line
             return response.data;
         } catch (error) {
+            console.error('Error in updateUser:', error);
+            console.error('Error response:', error.response?.data); // Debug line
             throw error;
         }
     },

@@ -287,7 +287,7 @@ const TechnicalHelpProposalPage = ({ project, onBack }) => {
                         <div className="flex items-center justify-end space-x-4">
                             <button
                                 type="button"
-                                onClick={onBack}
+                                onClick={handleGoBack}
                                 disabled={isSubmitting}
                                 className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                             >

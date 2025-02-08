@@ -290,23 +290,17 @@ const ProjectsPage = () => {
                                     </div>
                                     <div className="flex space-x-3">
                                         <button
-                                            className="flex-1 bg-emerald-600 text-white py-2.5 rounded-lg hover:bg-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                                            Modifier
+                                            onClick={() => handleDeleteProject(project?.id)}
+                                            className="flex-1 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition-all duration-200 shadow-sm hover:shadow-md"
+                                        >
+
+                                            Supprimer
                                         </button>
                                         <button
                                             onClick={() => handleProjectDetails(project)}
                                             className="flex-1 border-2 border-emerald-600 text-emerald-600 py-2.5 rounded-lg hover:bg-emerald-50 transition-all duration-200"
                                         >
                                             Voir détails
-                                        </button>
-                                    </div>
-                                    <div className="flex mt-3 space-x-3">
-                                        <button
-                                            onClick={() => handleDeleteProject(project?.id)}
-                                            className="w-full flex items-center justify-center px-3 py-2 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition-all duration-200"
-                                        >
-                                            <Trash2 className="h-4 w-4 mr-1"/>
-                                            Supprimer
                                         </button>
                                     </div>
                                     {project.status === 'approved' && (

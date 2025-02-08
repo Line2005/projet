@@ -3,9 +3,11 @@ import json
 import os
 import traceback
 import uuid
+from collections import defaultdict
 
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db.models.functions import TruncMonth
 from django.http import FileResponse
 from django.shortcuts import render
 
@@ -20,12 +22,15 @@ from django.contrib.auth.hashers import make_password
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from django.db.models import Count, Q, Sum  # Added Q here
+from django.db.models import Count, Q, Sum, When, Case, F, ExpressionWrapper, FloatField  # Added Q here
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
+
 from .contract import ContractHandler
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.db.models.functions import TruncMonth, ExtractMonth
 from django.utils import timezone
+from datetime import timedelta
 import pdfkit
 import logging
 
@@ -38,7 +43,8 @@ from .permission import IsProposalOwnerOrRequestEntrepreneur
 from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpdateSerializer, UserListSerializer, \
     UserCreateSerializer, InvestorSerializer, ProjectSerializer, FinancialRequestSerializer, TechnicalRequestSerializer, \
     HelpRequestSerializer, TechnicalProposalSerializer, FinancialProposalSerializer, CollaborationSerializer, \
-    ContractSerializer, CollaborationStatsSerializer, AnnouncementSerializer, EventSerializer
+    ContractSerializer, CollaborationStatsSerializer, AnnouncementSerializer, EventSerializer, \
+    OrganizationDetailSerializer, UserDetailSerializer, OrganizationUpdateSerializer
 
 
 class RegisterView(APIView):
@@ -200,8 +206,17 @@ class AdminSignupView(APIView):
 class UserManagementView(APIView):
     permission_classes = [IsAdminUser]
 
-    def get(self, request):
+    def get(self, request, user_id=None):
         """Get list of users with filtering and search"""
+        if user_id:
+            user = get_object_or_404(User, id=user_id)
+            if user.role == 'ONG-Association':
+                serializer = OrganizationDetailSerializer(user.organization)
+            else:
+                serializer = UserDetailSerializer(user)
+            return Response(serializer.data)
+
+
         users = User.objects.all()
 
         # Handle role filtering
@@ -239,14 +254,6 @@ class UserManagementView(APIView):
             {'error': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
-    def put(self, request, user_id):
-        """Update user details"""
-        user = get_object_or_404(User, id=user_id)
-        serializer = UserUpdateSerializer(user, data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response(UserListSerializer(user).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, user_id):
         """Delete a user"""
@@ -254,19 +261,76 @@ class UserManagementView(APIView):
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @transaction.atomic
     def patch(self, request, user_id):
-        """Update user status (active/blocked)"""
+        """Update user details"""
         user = get_object_or_404(User, id=user_id)
-        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            user = serializer.save()
+        print("Received data:", request.data)  # Debug line
 
-            # Update related stats in the database
-            user.is_active = not user.is_blocked  # Automatically update is_active based on blocked status
+        # Handle status update
+        if 'is_blocked' in request.data:
+            user.is_blocked = request.data['is_blocked']
+            user.is_active = not user.is_blocked
             user.save()
-
             return Response(UserListSerializer(user).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Handle user details update
+        try:
+            with transaction.atomic():
+                # First update the user model
+                if 'email' in request.data:
+                    user.email = request.data['email']
+                if 'phone' in request.data:
+                    user.phone = request.data['phone']
+                if 'password' in request.data and request.data['password']:
+                    user.set_password(request.data['password'])
+
+                user.save()
+                print("User saved:", user.email, user.phone)  # Debug line
+
+                # Then update the profile based on role
+                if user.role == 'ONG-Association':
+                    org = user.organization
+                    org_fields = ['organization_name', 'registration_number',
+                                  'founded_year', 'mission_statement', 'website_url']
+
+                    for field in org_fields:
+                        if field in request.data:
+                            setattr(org, field, request.data[field])
+                    org.save()
+                    print("Organization saved:", org.organization_name)  # Debug line
+
+                elif user.role in ['entrepreneur', 'investor']:
+                    profile = getattr(user, user.role.lower(), None)
+                    if profile and ('first_name' in request.data or 'last_name' in request.data):
+                        if 'first_name' in request.data:
+                            profile.first_name = request.data['first_name']
+                        if 'last_name' in request.data:
+                            profile.last_name = request.data['last_name']
+                        profile.save()
+                        print(f"{user.role} profile saved:", profile.first_name, profile.last_name)  # Debug line
+
+                # Fetch fresh data to return
+                if user.role == 'ONG-Association':
+                    serializer = OrganizationDetailSerializer(user.organization)
+                else:
+                    serializer = UserDetailSerializer(user)
+
+                # Always include status fields in response
+                response_data = serializer.data
+                response_data.update({
+                    'status': 'Inactif' if user.is_blocked else 'Actif',
+                    'is_blocked': user.is_blocked
+                })
+
+                return Response(serializer.data)
+
+        except Exception as e:
+            print("Error saving user:", str(e))  # Debug line
+            return Response(
+                {'error': f'Failed to update user: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class UserStatsView(APIView):
     permission_classes = [IsAdminUser]
@@ -1479,3 +1543,230 @@ class EventManagementView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except PermissionError as e:
             return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+# New view for public access to events
+class PublicEventView(APIView):
+    permission_classes = [IsAuthenticated]  # Only authenticated users can view events
+
+    def get(self, request, event_id=None):
+        try:
+            if event_id:
+                event = get_object_or_404(Event, id=event_id, status='published')
+                return Response(EventSerializer(event).data)
+
+            # Get all published events
+            events = Event.objects.filter(status='published')
+            return Response(EventSerializer(events, many=True).data)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class PublicAnnouncementView(APIView):
+    permission_classes = [IsAuthenticated]  # Only authenticated users can view announcements
+
+    def get(self, request):
+        """
+        Retrieve announcements with type-specific filtering options.
+        """
+        try:
+            announcement_type = request.query_params.get('type')
+            queryset = Announcement.objects.filter(status='published')
+
+            # Apply type filter if specified
+            if announcement_type:
+                queryset = queryset.filter(type=announcement_type)
+
+            serializer = AnnouncementSerializer(queryset, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+# Statistics of the application
+class AdminAnalyticsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        """Get comprehensive analytics for admin dashboard"""
+        try:
+            # Get the last 6 months for timeline analysis
+            end_date = timezone.now()
+            start_date = end_date - timedelta(days=180)
+
+            # Monthly statistics
+            monthly_stats = HelpRequest.objects.filter(
+                created_at__range=(start_date, end_date)
+            ).annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                projects=Count('project', distinct=True),
+                financial=Count('id', filter=Q(request_type='financial')),
+                technical=Count('id', filter=Q(request_type='technical')),
+                total_requests=Count('id'),
+                transactions=Sum(
+                    Case(
+                        When(
+                            request_type='financial',
+                            then=F('financialrequest__amount_requested')
+                        ),
+                        default=0,
+                        output_field=FloatField(),
+                    )
+                )
+            ).order_by('month')
+
+            # Technical statistics
+            technical_stat = TechnicalProposal.objects.filter(
+                created_at__range=(start_date, end_date)
+            ).annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                technical_proposal=Count('id'),
+            ).order_by('month')
+
+            # Financial statistics
+            financial_stat = FinancialProposal.objects.filter(
+                created_at__range=(start_date, end_date)
+            ).annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                financial_proposal=Count('id'),
+            ).order_by('month')
+
+            # Merge results
+            merged_stats = defaultdict(lambda: {'technical_proposal': 0, 'financial_proposal': 0, 'total_requests': 0})
+
+            # Format month to "Month Year"
+            def format_month(month):
+                return month.strftime('%b %y')
+
+            # Add technical stats
+            for stat in technical_stat:
+                formatted_month = format_month(stat['month'])
+                merged_stats[formatted_month]['technical_proposal'] = stat['technical_proposal']
+
+            # Add financial stats
+            for stat in financial_stat:
+                formatted_month = format_month(stat['month'])
+                merged_stats[formatted_month]['financial_proposal'] = stat['financial_proposal']
+
+            # Add total_request stats
+            for stat in monthly_stats:
+                formatted_month = format_month(stat['month'])
+                merged_stats[formatted_month]['total_requests'] = stat['total_requests']
+
+            # Overall statistics
+            total_projects = Project.objects.count()
+            total_financing = FinancialProposal.objects.filter(
+                status='accepted'
+            ).aggregate(
+                total=Sum('investment_amount')
+            )['total'] or 0
+
+            technical_help = TechnicalProposal.objects.filter(
+                #request_type='technical',
+                status='accepted'
+            ).count()
+
+            financial_help = FinancialProposal.objects.filter(
+                # request_type='technical',
+                status='accepted'
+            ).count()
+
+            # Calculate success rate
+            total_completed = HelpRequest.objects.filter(
+                status='completed'
+            ).count()
+            total_requests = HelpRequest.objects.count()
+            success_rate = (total_completed / total_requests * 100) if total_requests > 0 else 0
+
+            # Year over year growth
+            previous_year = HelpRequest.objects.filter(
+                created_at__lt=start_date
+            ).count()
+            current_year = HelpRequest.objects.filter(
+                created_at__range=(start_date, end_date)
+            ).count()
+            yoy_growth = ((current_year - previous_year) / previous_year * 100) if previous_year > 0 else 0
+
+            # Sector distribution
+            sector_counts = Project.objects.values('sector').annotate(
+                value=Count('id')
+            ).order_by('-value')
+
+            # Convert sector codes to display names using dict comprehension
+            sector_display_names = dict(Project.SECTOR_CHOICES)
+            sector_data = [
+                {
+                    'name': sector_display_names.get(item['sector'], item['sector']),
+                    'value': item['value']
+                }
+                for item in sector_counts
+            ]
+
+            # Format stats data
+            stats_data = {
+                'overview': {
+                    'total_projects': {
+                        'title': 'Projets Totaux',
+                        'value': str(total_projects),
+                        'change': f'+{yoy_growth:.1f}%',
+                        'bgColor': 'bg-blue-50',
+                        'textColor': 'text-blue-600'
+                    },
+                    'total_financing': {
+                        'title': 'Montant Total des Financements proposé',
+                        'value': f'{total_financing / 1000000:.1f}M FCFA',
+                        'change': f'+{((total_financing - previous_year) / previous_year * 100):.1f}%' if previous_year > 0 else '+0%',
+                        'bgColor': 'bg-green-50',
+                        'textColor': 'text-green-600'
+                    },
+                    'technical_help': {
+                        'title': 'Aide Technique Fournie',
+                        'value': str(technical_help),
+                        'change': f'+{((technical_help - previous_year) / previous_year * 100):.1f}%' if previous_year > 0 else '+0%',
+                        'bgColor': 'bg-orange-50',
+                        'textColor': 'text-orange-600'
+                    },
+                    'financial_help': {
+                        'title': 'Aide Financiere Fournie',
+                        'value': str(financial_help),
+                        'change': f'+{((financial_help - previous_year) / previous_year * 100):.1f}%' if previous_year > 0 else '+0%',
+                        'bgColor': 'bg-yellow-50',
+                        'textColor': 'text-yellow-600'
+                    },
+                    'success_rate': {
+                        'title': 'Taux de Réussite',
+                        'value': f'{success_rate:.1f}%',
+                        'change': '+5.2%',  # Calculate actual change if historical data is available
+                        'bgColor': 'bg-purple-50',
+                        'textColor': 'text-purple-600'
+                    }
+                },
+                'monthly_stats': [
+                    {
+                        'month': stat['month'].strftime('%b %y'),  # Short month name
+                        'projects': stat['projects'],
+                        'financial': stat['financial'],
+                        'technical': stat['technical'],
+                        'transactions': float(stat['transactions'] or 0)
+                    }
+                    for stat in monthly_stats
+                ],
+                'proposal_stats': [
+                        {'month': month, **data} for month, data in sorted(merged_stats.items())
+                ],
+                'sector_data': list(sector_data)
+            }
+
+            return Response(stats_data)
+
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

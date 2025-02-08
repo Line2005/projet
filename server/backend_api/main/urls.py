@@ -5,7 +5,8 @@ from . import views
 from .views import RegisterView, LoginView, LogoutView, UserManagementView, UserStatsView, AdminSignupView, \
     ProjectAPIView, ProjectUploadDocumentAPIView, ProjectUpdateStatusAPIView, HelpRequestAPIView, \
     HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
-    ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView
+    ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView, PublicAnnouncementView, PublicEventView, \
+    AdminAnalyticsAPIView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -53,9 +54,13 @@ urlpatterns = [
     path('events/', EventManagementView.as_view(), name='event-create'),
     path('events/<int:event_id>/', EventManagementView.as_view(), name='event-detail'),
 
-    # Update and delete a specific event
-    path('events/<int:event_id>/update/', EventManagementView.as_view(), name='event-update'),
-    path('events/<int:event_id>/delete/', EventManagementView.as_view(), name='event-delete'),
+    # Public announcement endpoints
+    path('public/announcements/', PublicAnnouncementView.as_view(), name='public-announcements'),
+    path('public/announcements/<int:pk>/', PublicAnnouncementView.as_view(), name='public-announcement-detail'),
+
+    # Public event endpoints
+    path('public/events/', PublicEventView.as_view(), name='public-events'),
+    path('public/events/<int:event_id>/', PublicEventView.as_view(), name='public-event-detail'),
 
     #Admin sign up
     path('admin/signup', AdminSignupView.as_view(), name='admin-signup'),
@@ -64,4 +69,5 @@ urlpatterns = [
     path('admin/users', UserManagementView.as_view(), name='admin-users'),
     path('admin/users/<int:user_id>', UserManagementView.as_view(), name='admin-user-update'),
     path('admin/users/stats', UserStatsView.as_view(), name='admin-user-stats'),
+    path('admin/analytics/', AdminAnalyticsAPIView.as_view(), name='admin-analytics'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

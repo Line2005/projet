@@ -109,9 +109,6 @@ const AdminProject = () => {
         { id: 'users', label: 'Utilisateurs', icon: Users, path: '/admin/dashboard' },
         { id: 'projects', label: 'Validation des projets', icon: FolderCheck, path: '/admin/project' },
         { id: 'analytics', label: 'Suivi et analyse', icon: BarChart2, path: '/admin/analytics' },
-        { id: 'content', label: 'Gestion du contenu', icon: FileText, path: '/admin/content' },
-        { id: 'network', label: 'Mise en réseau', icon: Network, path: '/admin/network' },
-        { id: 'settings', label: 'Paramètres', icon: Settings, path: '/admin/settings' },
     ];
 
     const handleLogout = async () => {

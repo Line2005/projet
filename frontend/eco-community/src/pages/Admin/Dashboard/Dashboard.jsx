@@ -1,5 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Users, FolderCheck, BarChart2, FileText, Network, Settings, Bell, User, Search, LogOut } from 'lucide-react';
+import {
+    Users,
+    FolderCheck,
+    BarChart2,
+    FileText,
+    Network,
+    Settings,
+    Bell,
+    User,
+    Search,
+    LogOut,
+    Trash2, Edit, Unlock, Lock
+} from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../../../Services/auth.js";
 import { adminService } from '../../../Services/Admin/UserMangement.js';
@@ -7,6 +19,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import api from "../../../Services/api.js";
 import {Button} from "../../../components/ui/button.jsx";
 import UserModal from "./Form.jsx";
+import EditEventModal from "../../ONG-Associations/Events/editing/EditingEvents.jsx";
 
 
 
@@ -238,9 +251,6 @@ const AdminDashboard = () => {
         { id: 'users', label: 'Utilisateurs', icon: Users, path: '/admin/dashboard' },
         { id: 'projects', label: 'Validation des projets', icon: FolderCheck, path: '/admin/project' },
         { id: 'analytics', label: 'Suivi et analyse', icon: BarChart2, path: '/admin/analytics' },
-        { id: 'content', label: 'Gestion du contenu', icon: FileText, path: '/admin/content' },
-        { id: 'network', label: 'Mise en réseau', icon: Network, path: '/admin/network' },
-        { id: 'settings', label: 'Paramètres', icon: Settings, path: '/admin/settings' },
     ];
 
     const renderContent = () => {
@@ -268,7 +278,7 @@ const AdminDashboard = () => {
         return (
             <div className="space-y-6">
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {stats?.map((stat, index) => (
                         <div key={index}
                              className={`p-6 ${stat.bgColor} rounded-lg shadow-sm hover:shadow-lg transition-shadow duration-300`}>
@@ -280,7 +290,7 @@ const AdminDashboard = () => {
 
                 {/* Users Table */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <CardTitle>Liste des utilisateurs</CardTitle>
                         <div className="flex gap-4">
                             <div className="relative">
@@ -343,30 +353,31 @@ const AdminDashboard = () => {
                                                 </span>
                                         </td>
                                         <td className="p-4">
-                                            {/*<button*/}
-                                            {/*    onClick={() => {*/}
-                                            {/*        setSelectedUser(user);*/}
-                                            {/*        setModalOpen(true);*/}
-                                            {/*    }}*/}
-                                            {/*    className="text-blue-600 hover:text-blue-800 font-medium mr-3"*/}
-                                            {/*>*/}
-                                            {/*    Edit*/}
-                                            {/*</button>*/}
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedUser(user);
+                                                    setModalOpen(true);
+                                                }}
+                                                className="text-blue-600 hover:text-blue-800 font-medium mr-3"
+                                            >
+                                                <Edit className="h-5 w-5 text-gray-600"/>
+                                            </button>
                                             <button
                                                 onClick={() => handleDeleteUser(user.id)}
                                                 className="text-red-600 hover:text-red-800 font-medium mr-3"
                                             >
-                                                Delete
+                                                <Trash2 className="h-5 w-5 text-red-600"/>
                                             </button>
                                             <button
                                                 className={`font-medium ${
-                                                    user.is_blocked
-                                                        ? 'text-green-600 hover:text-green-800'
-                                                        : 'text-red-600 hover:text-red-800'
+                                                    user.status === 'Inactif'
+                                                        ? 'text-red-600 hover:text-red-800'
+                                                        : 'text-green-600 hover:text-green-800'
                                                 }`}
                                                 onClick={() => handleUserStatusUpdate(user.id, !user.is_blocked)}
                                             >
-                                                {user.is_blocked ? 'Unblock' : 'Block'}
+                                                {user.status === 'Actif' ? <Lock className="h-5 w-5 text-red-600"/> :
+                                                    <Unlock className="h-5 w-5 text-green-600"/>}
                                             </button>
                                         </td>
                                     </tr>
@@ -408,22 +419,39 @@ const AdminDashboard = () => {
 
             <div className="flex">
                 <aside className="w-64 bg-white shadow-lg min-h-screen sticky top-16">
-                    <nav className="p-4">
-                        <ul className="space-y-1">
-                            {navigationItems.map(({id, label, icon: Icon, path}) => (
-                                <li key={id}>
-                                    <button
-                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                                            activeSection === id ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
-                                        }`}
-                                        onClick={() => handleNavigation(path, id)}
-                                    >
-                                        <Icon size={20}/>
-                                        <span className="font-medium">{label}</span>
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                    <nav className="flex flex-col h-[calc(100vh-4rem)]">
+                        {/* Main navigation */}
+                        <div className="flex-grow p-4">
+                            <ul className="space-y-1">
+                                {navigationItems.map(({id, label, icon: Icon, path}) => (
+                                    <li key={id}>
+                                        <button
+                                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                                                activeSection === id ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
+                                            }`}
+                                            onClick={() => handleNavigation(path, id)}
+                                        >
+                                            <Icon size={20}/>
+                                            <span className="font-medium">{label}</span>
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                    {/*    /!* Logout button *!/*/}
+                    {/*    <div className="p-4 border-t">*/}
+                    {/*        <button*/}
+                    {/*            onClick={handleLogout}*/}
+                    {/*            disabled={isLoggingOut}*/}
+                    {/*            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors"*/}
+                    {/*        >*/}
+                    {/*            <LogOut size={20}/>*/}
+                    {/*            <span className="font-medium">*/}
+                    {/*    {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}*/}
+                    {/*</span>*/}
+                    {/*        </button>*/}
+                    {/*    </div>*/}
                     </nav>
                 </aside>
 

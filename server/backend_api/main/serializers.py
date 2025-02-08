@@ -1,6 +1,7 @@
 import decimal
 import json
 
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 # Create your serializers here.
@@ -87,6 +88,135 @@ class UserListSerializer(serializers.ModelSerializer):
         if not obj.is_active:
             return 'Inactif'
         return 'Actif'
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    """Serializer for detailed user information"""
+    # Get role-specific details
+    first_name = serializers.SerializerMethodField()
+    last_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'phone', 'role', 'first_name', 'last_name', 'is_active', 'is_blocked']
+        read_only_fields = ['id']
+
+    def get_first_name(self, obj):
+        if hasattr(obj, 'entrepreneur'):
+            return obj.entrepreneur.first_name
+        elif hasattr(obj, 'investor'):
+            return obj.investor.first_name
+        return None
+
+    def get_last_name(self, obj):
+        if hasattr(obj, 'entrepreneur'):
+            return obj.entrepreneur.last_name
+        elif hasattr(obj, 'investor'):
+            return obj.investor.last_name
+        return None
+
+
+class OrganizationDetailSerializer(serializers.ModelSerializer):
+    """Serializer for organization details"""
+    email = serializers.EmailField(source='user.email')
+    phone = serializers.CharField(source='user.phone')
+    role = serializers.CharField(source='user.role')
+    is_active = serializers.BooleanField(source='user.is_active')
+    is_blocked = serializers.BooleanField(source='user.is_blocked')
+
+    class Meta:
+        model = Organization
+        fields = [
+            'id', 'email', 'phone', 'role', 'is_active', 'is_blocked',
+            'organization_name', 'registration_number', 'founded_year',
+            'mission_statement', 'website_url'
+        ]
+        read_only_fields = ['id']
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating user information"""
+    password = serializers.CharField(write_only=True, required=False)
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = ['email', 'phone', 'password', 'first_name', 'last_name']
+
+    def validate_password(self, value):
+        if value:
+            validate_password(value)
+        return value
+
+    def update(self, instance, validated_data):
+        # Handle profile update
+        profile_data = {}
+        if 'first_name' in validated_data:
+            profile_data['first_name'] = validated_data.pop('first_name')
+        if 'last_name' in validated_data:
+            profile_data['last_name'] = validated_data.pop('last_name')
+
+        # Update user
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update profile if exists
+        if profile_data:
+            profile = None
+            if hasattr(instance, 'entrepreneur'):
+                profile = instance.entrepreneur
+            elif hasattr(instance, 'investor'):
+                profile = instance.investor
+
+            if profile:
+                for attr, value in profile_data.items():
+                    setattr(profile, attr, value)
+                profile.save()
+
+        return instance
+
+
+class OrganizationUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating organization information"""
+    email = serializers.EmailField(required=False)
+    phone = serializers.CharField(required=False)
+    password = serializers.CharField(write_only=True, required=False)
+
+    class Meta:
+        model = Organization
+        fields = [
+            'email', 'phone', 'password',
+            'organization_name', 'registration_number', 'founded_year',
+            'mission_statement', 'website_url'
+        ]
+
+    def validate_password(self, value):
+        if value:
+            validate_password(value)
+        return value
+
+    def update(self, instance, validated_data):
+        # Handle user data
+        user_data = {}
+        for field in ['email', 'phone', 'password']:
+            if field in validated_data:
+                user_data[field] = validated_data.pop(field)
+
+        # Update user if necessary
+        if user_data:
+            user = instance.user
+            for attr, value in user_data.items():
+                setattr(user, attr, value)
+            user.save()
+
+        # Update organization
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 # Admin handling users
 class UserCreateSerializer(serializers.ModelSerializer):

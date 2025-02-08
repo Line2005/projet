@@ -40,13 +40,13 @@ const ProjectCreationForm = () => {
 
     const sectors = [
         'Agriculture',
-        'Technology',
-        'Crafts',
+        'Technologie',
+        'Artisanat',
         'Commerce',
-        'Education',
-        'Healthcare',
-        'Tourism',
-        'Manufacturing',
+        'Éducation',
+        'Santé',
+        'Tourisme',
+        'Industrie',
         'Services'
     ];
 

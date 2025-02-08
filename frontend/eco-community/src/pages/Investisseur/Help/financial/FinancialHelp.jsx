@@ -260,7 +260,7 @@ const FinancialHelpProposalPage = ({ project, onBack }) => {
                         <div className="flex justify-end space-x-4">
                             <button
                                 type="button"
-                                onClick={onBack}
+                                onClick={handleGoBack}
                                 className="px-6 py-2 border-2 border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50"
                             >
                                 Annuler

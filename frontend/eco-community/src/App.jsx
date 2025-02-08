@@ -26,6 +26,7 @@ import InvestorCollaboratorsPage from "./pages/Investisseur/collaboration/Collab
 import SettingsPage from "./pages/entreprneur/settings/Settings.jsx";
 import AdminDashboard from "./pages/Admin/Dashboard/Dashboard.jsx";
 import AdminProject from "./pages/Admin/Project/ProjectValidation.jsx";
+import AdminAnalytics from "./pages/Admin/Analyse/Statistics.jsx";
 
 
 // Protected Route Component
@@ -87,6 +88,7 @@ function App() {
                 //Role base authentication
                 <Route path="/admin/dashboard" element={ <ProtectedRoute allowedRoles={['admin']}> <AdminDashboard /> </ProtectedRoute>} />
                 <Route path="/admin/project" element={ <ProtectedRoute allowedRoles={['admin']}> <AdminProject /> </ProtectedRoute>} />
+                <Route path="/admin/analytics" element={ <ProtectedRoute allowedRoles={['admin']}> <AdminAnalytics /> </ProtectedRoute>} />
 
             </Routes>
         </BrowserRouter>

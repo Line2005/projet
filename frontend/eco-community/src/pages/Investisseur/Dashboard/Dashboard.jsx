@@ -132,11 +132,6 @@ const ProjectRequestsInvestorPage = () => {
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>
                         </a>
-                        <a href="/dashboard"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <BarChart2 className="h-5 w-5"/>
-                            <span>Tableau de bord</span>
-                        </a>
                         <a href="/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Settings className="h-5 w-5"/>
@@ -293,6 +288,7 @@ const ProjectRequestsInvestorPage = () => {
                                             </div>
 
                                             <div className="flex flex-col space-y-2">
+                                                {request.status === 'pending' && (
                                                 <button
                                                     className="w-full flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
                                                     onClick={() => handleProposeHelp(request)}
@@ -300,6 +296,8 @@ const ProjectRequestsInvestorPage = () => {
                                                     <Wrench className="h-4 w-4 mr-2" />
                                                     Proposer mon aide
                                                 </button>
+                                                )}
+
                                                 <button
                                                     className="w-full flex items-center justify-center px-4 py-2 border-2 border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all"
                                                 >
