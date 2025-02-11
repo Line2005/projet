@@ -324,63 +324,63 @@ const HelpProposalsPage = () => {
                                             {proposal.status === 'accepted' ? 'Acceptée' :
                                                 proposal.status === 'refused' ? 'Refusée' : 'En attente'}
                                         </span>
-
-                                    <button
-                                        onClick={(e) => handleDeleteProposal(proposal, e)}
-                                        disabled={isDeletingProposal}
-                                        className="p-1 hover:bg-red-100 rounded-full text-red-600 transition-colors"
-                                        title="Supprimer la proposition"
-                                    >
-                                        <Trash2 className="h-5 w-5"/>
-                                    </button>
-                                </div>
-
-                                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                                    {proposal.help_request_details?.specific_need || 'Untitled Proposal'}
-                                </h3>
-
-                                <div className="space-y-2 mb-4">
-                                    <div className="flex items-center text-gray-600">
-                                        <Users className="h-4 w-4 mr-2 text-emerald-500"/>
-                                        <span className="text-sm">{proposal.investor_name}</span>
                                     </div>
-                                    {proposal.type === 'financial' && (
+
+                                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                        {proposal.help_request_details?.specific_need || 'Untitled Proposal'}
+                                    </h3>
+
+                                    <div className="space-y-2 mb-4">
                                         <div className="flex items-center text-gray-600">
-                                            <DollarSign className="h-4 w-4 mr-2 text-emerald-500"/>
-                                            <span className="text-sm">{proposal.formattedAmount}</span>
+                                            <Users className="h-4 w-4 mr-2 text-emerald-500"/>
+                                            <span className="text-sm">{proposal.investor_name}</span>
                                         </div>
-                                    )}
-                                    {proposal.type === 'technical' && (
+                                        {proposal.type === 'financial' && (
+                                            <div className="flex items-center text-gray-600">
+                                                <DollarSign className="h-4 w-4 mr-2 text-emerald-500"/>
+                                                <span className="text-sm">{proposal.formattedAmount}</span>
+                                            </div>
+                                        )}
+                                        {proposal.type === 'technical' && (
+                                            <div className="flex items-center text-gray-600">
+                                                <Info className="h-4 w-4 mr-2 text-emerald-500"/>
+                                                <span className="text-sm">{proposal.expertise}</span>
+                                            </div>
+                                        )}
                                         <div className="flex items-center text-gray-600">
-                                            <Info className="h-4 w-4 mr-2 text-emerald-500"/>
-                                            <span className="text-sm">{proposal.expertise}</span>
-                                        </div>
-                                    )}
-                                    <div className="flex items-center text-gray-600">
-                                        <Calendar className="h-4 w-4 mr-2 text-emerald-500"/>
-                                        <span className="text-sm">
+                                            <Calendar className="h-4 w-4 mr-2 text-emerald-500"/>
+                                            <span className="text-sm">
                                             {new Date(proposal.created_at).toLocaleDateString()}
                                           </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex space-x-3">
+                                        <button
+                                            onClick={() => handleViewDetails(proposal)}
+                                            className="w-full flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
+                                        >
+                                            <MessageCircle className="h-4 w-4 mr-2"/>
+                                            Voir les détails
+                                        </button>
+                                        <button
+                                            onClick={(e) => handleDeleteProposal(proposal, e)}
+                                            disabled={isDeletingProposal}
+                                            className="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-2"/>
+                                            Supprimer
+                                        </button>
                                     </div>
                                 </div>
-
-                                <button
-                                    onClick={() => handleViewDetails(proposal)}
-                                    className="w-full flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
-                                >
-                                    <MessageCircle className="h-4 w-4 mr-2"/>
-                                    Voir les détails
-                                </button>
                             </div>
-                            </div>
-                            ))}
+                        ))}
                     </div>
 
                             {/* Empty State */}
                             {getFilteredProposals().length === 0 && (
-                            <div className="text-center py-12">
-                                <div className="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto">
-                                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4"/>
+                                <div className="text-center py-12">
+                                    <div className="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto">
+                                        <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4"/>
                                     <h3 className="text-xl font-bold text-gray-900 mb-2">Aucune proposition trouvée</h3>
                                 <p className="text-gray-600">
                                     {searchQuery

@@ -1,62 +1,92 @@
 import Progress from "../../../components/ui/progress.jsx";
 
-
 const ProposalProgress = ({ proposal, requestAmounts }) => {
-    const calculateProgress = (proposal, requestAmounts) => {
-        if (!proposal || !proposal.helpRequestId || !requestAmounts || !requestAmounts[proposal.helpRequestId]) {
-            return {
-                current: 0,
-                withProposal: 0,
-                remaining: 100,
-                remainingAmount: proposal.requestedAmount || 0,
-                acceptedAmount: 0,
-                totalRequested: proposal.requestedAmount || 0
-            };
+    const calculateProgress = () => {
+        // Ensure all values are properly parsed as numbers
+        const totalRequested = Number(proposal?.requestedAmount) || 0;
+        const proposalAmount = Number(proposal?.amount) || 0;
+
+        // Get accepted amount from requestAmounts, handling possible undefined values
+        let acceptedAmount = 0;
+        if (proposal?.helpRequestId && requestAmounts?.[proposal.helpRequestId]) {
+            acceptedAmount = Number(requestAmounts[proposal.helpRequestId].accepted_amount || 0);
         }
 
-        const amountData = requestAmounts[proposal.helpRequestId];
-        const acceptedAmount = amountData.accepted_amount || 0;
-        const totalRequested = proposal.requestedAmount || 0;
-        const currentProposalValue = proposal.status === 'pending' ? proposal.amount : 0;
+        // If the current proposal is accepted, include it in accepted amount if not already counted
+        if (proposal.status === 'accepted' && !acceptedAmount.toString().includes(proposalAmount)) {
+            acceptedAmount += proposalAmount;
+        }
+
+        // Calculate total progress including this proposal if it's pending
+        const totalProgress = totalRequested > 0 ?
+            ((acceptedAmount + (proposal.status === 'pending' ? proposalAmount : 0)) / totalRequested) * 100 : 0;
 
         // Calculate remaining amount
-        const remainingBeforeProposal = Math.max(0, totalRequested - acceptedAmount);
-        const remainingAfterProposal = Math.max(0, remainingBeforeProposal - currentProposalValue);
-
-        // Calculate percentages
-        const currentProgress = totalRequested > 0 ? (acceptedAmount / totalRequested) * 100 : 0;
-        const progressWithCurrent = totalRequested > 0 ?
-            Math.min(100, ((acceptedAmount + currentProposalValue) / totalRequested) * 100) : 0;
+        let remainingAmount = totalRequested - acceptedAmount;
+        if (proposal.status === 'pending') {
+            remainingAmount -= proposalAmount;
+        }
+        remainingAmount = Math.max(0, remainingAmount);
 
         return {
-            current: Math.min(100, currentProgress),
-            withProposal: Math.min(100, progressWithCurrent),
-            remaining: Math.max(0, 100 - progressWithCurrent),
-            remainingAmount: remainingAfterProposal,
-            acceptedAmount: acceptedAmount,
-            totalRequested: totalRequested
+            currentProgress: Math.min(100, Math.max(0, (acceptedAmount / totalRequested) * 100)),
+            withProposalProgress: Math.min(100, Math.max(0, totalProgress)),
+            remainingAmount,
+            acceptedAmount,
+            totalRequested,
+            proposalAmount
         };
     };
 
-    const progress = calculateProgress(proposal, requestAmounts);
+    const {
+        currentProgress,
+        withProposalProgress,
+        remainingAmount,
+        acceptedAmount,
+        proposalAmount
+    } = calculateProgress();
 
     return (
-        <div className="mb-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
-                <span>Montant proposé: {proposal.amount.toLocaleString('fr-FR')} FCFA</span>
+        <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+                <span>Montant proposé: {proposalAmount.toLocaleString('fr-FR')} FCFA</span>
                 <span>Demandé: {proposal.requestedAmount.toLocaleString('fr-FR')} FCFA</span>
             </div>
-            <Progress
-                value={progress.withProposal}
-                className="h-2 bg-gray-200"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-        <span>
-          Reste à financer: {progress.remainingAmount.toLocaleString('fr-FR')} FCFA
-        </span>
+
+            <div className="relative pt-1">
+                <div className="w-full bg-gray-200 h-2 rounded-full">
+                    {/* Base progress bar showing current accepted amount */}
+                    <div
+                        className="h-full bg-emerald-600 rounded-full transition-all"
+                        style={{ width: `${currentProgress}%` }}
+                    />
+                    {/* Additional progress showing pending proposal */}
+                    {proposal.status === 'pending' && (
+                        <div
+                            className="h-full bg-emerald-400 rounded-r-full absolute top-0"
+                            style={{
+                                width: `${withProposalProgress}%`,
+                                left: `${currentProgress}%`
+                            }}
+                        />
+                    )}
+                </div>
+            </div>
+
+            <div className="flex justify-between text-xs text-gray-500">
                 <span>
-          {Math.round(progress.withProposal)}%
-        </span>
+                    Reste à financer: {remainingAmount.toLocaleString('fr-FR')} FCFA
+                </span>
+                <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-emerald-600 inline-block"></span>
+                    {acceptedAmount.toLocaleString('fr-FR')} FCFA
+                    {proposal.status === 'pending' && (
+                        <>
+                            <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block"></span>
+                            + {proposalAmount.toLocaleString('fr-FR')} FCFA
+                        </>
+                    )}
+                </span>
             </div>
         </div>
     );

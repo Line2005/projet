@@ -111,7 +111,7 @@ const HelpRequestsListPage = () => {
             if (searchQuery) {
                 const searchLower = searchQuery.toLowerCase();
                 return (
-                    request.project.project_name.toLowerCase().includes(searchLower) ||
+                    request.project_details.project_name.toLowerCase().includes(searchLower) ||
                     request.specific_need.toLowerCase().includes(searchLower) ||
                     request.description.toLowerCase().includes(searchLower)
                 );
