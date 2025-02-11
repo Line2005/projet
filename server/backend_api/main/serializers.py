@@ -58,6 +58,86 @@ class OrganizationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Passwords don't match")
         return data
 
+#User management profile
+class UserProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField()
+    phone = serializers.CharField()
+    profile_image = serializers.ImageField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'phone', 'profile_image']
+
+
+class EntrepreneurProfileSerializer(serializers.ModelSerializer):
+    user = UserProfileSerializer()
+
+    class Meta:
+        model = Entrepreneur
+        fields = ['first_name', 'last_name', 'bio', 'user']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        # Update user fields
+        if user_data:
+            user_serializer = UserProfileSerializer(instance.user, data=user_data, partial=True)
+            user_serializer.is_valid(raise_exception=True)
+            user_serializer.save()
+
+        # Update entrepreneur fields
+        return super().update(instance, validated_data)
+
+
+class InvestorProfileSerializer(serializers.ModelSerializer):
+    user = UserProfileSerializer()
+
+    class Meta:
+        model = Investor
+        fields = ['first_name', 'last_name', 'bio', 'user']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        # Update user fields
+        if user_data:
+            user_serializer = UserProfileSerializer(instance.user, data=user_data, partial=True)
+            user_serializer.is_valid(raise_exception=True)
+            user_serializer.save()
+
+        # Update investor fields
+        return super().update(instance, validated_data)
+
+
+class OrganizationProfileSerializer(serializers.ModelSerializer):
+    user = UserProfileSerializer()
+
+    class Meta:
+        model = Organization
+        fields = ['organization_name', 'registration_number', 'founded_year',
+                  'mission_statement', 'website_url', 'bio', 'user']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        # Update user fields
+        if user_data:
+            user_serializer = UserProfileSerializer(instance.user, data=user_data, partial=True)
+            user_serializer.is_valid(raise_exception=True)
+            user_serializer.save()
+
+        # Update organization fields
+        return super().update(instance, validated_data)
+
+
+class PasswordUpdateSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("New passwords don't match")
+        return data
+
+
 # Admin handling users
 class UserListSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()

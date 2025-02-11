@@ -14,7 +14,7 @@ import {
     Filter,
     LogOut,
     Settings,
-    CheckCircle, X
+    CheckCircle, X, Menu
 } from 'lucide-react';
 import api from "../../../Services/api.js";
 import AnnouncementImage from "./AnnouncementImage.jsx";
@@ -32,6 +32,7 @@ const NGOAnnouncementsPage = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
     const [editingAnnouncement, setEditingAnnouncement] = useState(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         fetchAnnouncements();
@@ -147,10 +148,26 @@ const NGOAnnouncementsPage = () => {
             (statusFilter === 'all' || announcement.status === statusFilter)
         );
 
+    // Handle mobile menu
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden fixed top-4 right-4 z-50">
+                <button
+                    onClick={toggleMobileMenu}
+                    className="p-2 rounded-lg bg-emerald-600 text-white"
+                >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+            </div>
             {/* Side Navigation */}
-            <aside className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 hidden lg:block shadow-xl">
+            <aside className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
+                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:block shadow-xl`}>
                 <div className="p-6">
                     <h2 className="text-white text-2xl font-bold mb-8">
                         EcoCommunity
@@ -166,7 +183,7 @@ const NGOAnnouncementsPage = () => {
                             <Calendar className="h-5 w-5"/>
                             <span>Événements</span>
                         </a>
-                        <a href="#"
+                        <a href="/association/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Settings className="h-5 w-5"/>
                             <span>Paramètres</span>

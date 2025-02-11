@@ -157,11 +157,27 @@ const HelpPage = () => {
         return <ProposalProgress proposal={proposal} requestAmounts={requestAmounts} />;
     };
 
+    // Handle mobile menu
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden fixed top-4 right-4 z-50">
+                <button
+                    onClick={toggleMobileMenu}
+                    className="p-2 rounded-lg bg-emerald-600 text-white"
+                >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+            </div>
             {/* Sidebar */}
             <aside
-                className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 hidden lg:block shadow-xl">
+                className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
+                    isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:block shadow-xl`}>
                 <div className="p-6">
                     <h2 className="text-white text-2xl font-bold mb-8 flex items-center">
                         <FileText className="h-6 w-6 mr-2"/>
@@ -193,7 +209,7 @@ const HelpPage = () => {
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>
                         </a>
-                        <a href="#"
+                        <a href="/entrepreneur/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                             <Settings className="h-5 w-5"/>
                             <span>Paramètres</span>

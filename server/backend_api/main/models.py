@@ -28,6 +28,7 @@ class User(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_blocked = models.BooleanField(default=False)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
 
     groups = models.ManyToManyField(
         'auth.Group',
@@ -48,6 +49,7 @@ class Entrepreneur(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    bio = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = 'entrepreneurs'
@@ -56,6 +58,7 @@ class Investor(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    bio = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = 'investors'
@@ -72,6 +75,7 @@ class Organization(models.Model):
     )
     mission_statement = models.TextField(blank=True)
     website_url = models.URLField(blank=True)
+    bio = models.TextField(blank=True, null=True)
 
     class Meta:
         db_table = 'organizations'

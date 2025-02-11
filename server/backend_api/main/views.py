@@ -25,6 +25,7 @@ from django.contrib.auth import authenticate
 from django.db.models import Count, Q, Sum, When, Case, F, ExpressionWrapper, FloatField  # Added Q here
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import check_password, make_password
 
 from .contract import ContractHandler
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -44,7 +45,8 @@ from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpd
     UserCreateSerializer, InvestorSerializer, ProjectSerializer, FinancialRequestSerializer, TechnicalRequestSerializer, \
     HelpRequestSerializer, TechnicalProposalSerializer, FinancialProposalSerializer, CollaborationSerializer, \
     ContractSerializer, CollaborationStatsSerializer, AnnouncementSerializer, EventSerializer, \
-    OrganizationDetailSerializer, UserDetailSerializer, OrganizationUpdateSerializer
+    OrganizationDetailSerializer, UserDetailSerializer, OrganizationUpdateSerializer, PasswordUpdateSerializer, \
+    EntrepreneurProfileSerializer, InvestorProfileSerializer, OrganizationProfileSerializer
 
 
 class RegisterView(APIView):
@@ -201,6 +203,156 @@ class AdminSignupView(APIView):
             'message': 'Admin created successfully',
             'user_id': user.id
         }, status=status.HTTP_201_CREATED)
+
+#Users settings
+class UserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def _get_user(self, request, user_id=None):
+        """Helper method to get user and check permissions"""
+        if user_id is None:
+            return request.user
+
+        if not request.user.is_staff and str(request.user.id) != str(user_id):
+            raise PermissionError('Permission denied')
+
+        try:
+            return User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            raise User.DoesNotExist('User not found')
+
+    def _get_serializer_class(self, user):
+        """Helper method to get appropriate serializer based on user role"""
+        if user.role == 'entrepreneur':
+            return EntrepreneurProfileSerializer
+        elif user.role == 'investor':
+            return InvestorProfileSerializer
+        elif user.role == 'ONG-Association':
+            return OrganizationProfileSerializer
+        raise ValueError(f"Invalid user role: {user.role}")
+
+    def _get_profile_instance(self, user):
+        """Helper method to get profile instance based on user role"""
+        if user.role == 'entrepreneur':
+            return user.entrepreneur
+        elif user.role == 'investor':
+            return user.investor
+        elif user.role == 'ONG-Association':
+            return user.organization
+        raise ValueError(f"Invalid user role: {user.role}")
+
+    def get(self, request, user_id=None):
+        """Get user profile"""
+        try:
+            user = self._get_user(request, user_id)
+            profile = self._get_profile_instance(user)
+            serializer_class = self._get_serializer_class(user)
+            serializer = serializer_class(profile)
+            return Response(serializer.data)
+        except (PermissionError, User.DoesNotExist) as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_403_FORBIDDEN if isinstance(e, PermissionError)
+                else status.HTTP_404_NOT_FOUND
+            )
+        except (Entrepreneur.DoesNotExist, Investor.DoesNotExist, Organization.DoesNotExist):
+            return Response(
+                {'error': 'Profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @transaction.atomic
+    def patch(self, request, user_id=None):
+        """Update user profile or password"""
+        try:
+            user = self._get_user(request, user_id)
+        except (PermissionError, User.DoesNotExist) as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_403_FORBIDDEN if isinstance(e, PermissionError)
+                else status.HTTP_404_NOT_FOUND
+            )
+
+        # Handle password update
+        if 'new_password' in request.data:
+            return self._update_password(request, user)
+
+        try:
+            profile = self._get_profile_instance(user)
+            serializer_class = self._get_serializer_class(user)
+            serializer = serializer_class(profile, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        except (Entrepreneur.DoesNotExist, Investor.DoesNotExist, Organization.DoesNotExist):
+            return Response(
+                {'error': 'Profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    def _update_password(self, request, user):
+        """Helper method to handle password updates"""
+        serializer = PasswordUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Only check current password for non-admin users changing their own password
+        if not request.user.is_staff or user.id == request.user.id:
+            if not check_password(serializer.validated_data['current_password'], user.password):
+                return Response(
+                    {'error': 'Current password is incorrect'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        user.password = make_password(serializer.validated_data['new_password'])
+        user.save()
+        return Response({'message': 'Password updated successfully'})
+
+    def post(self, request, user_id=None):
+        """Update user profile image"""
+        try:
+            user = self._get_user(request, user_id)
+        except (PermissionError, User.DoesNotExist) as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_403_FORBIDDEN if isinstance(e, PermissionError)
+                else status.HTTP_404_NOT_FOUND
+            )
+
+        if 'profile_image' not in request.FILES:
+            return Response(
+                {'error': 'No image file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        image = request.FILES['profile_image']
+
+        # Delete old image if it exists
+        if user.profile_image:
+            default_storage.delete(user.profile_image.path)
+
+        # Save new image
+        filename = f'profile_images/user_{user.id}_{image.name}'
+        user.profile_image = default_storage.save(filename, image)
+        user.save()
+
+        return Response({
+            'message': 'Profile image updated successfully',
+            'image_url': user.profile_image.url
+        })
+
+    @transaction.atomic
+    def delete(self, request, user_id=None):
+        """Delete user account"""
+        try:
+            user = self._get_user(request, user_id)
+            user.delete()
+            return Response({'message': 'Account deleted successfully'})
+        except (PermissionError, User.DoesNotExist) as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_403_FORBIDDEN if isinstance(e, PermissionError)
+                else status.HTTP_404_NOT_FOUND
+            )
 
 # Admin handling users
 class UserManagementView(APIView):

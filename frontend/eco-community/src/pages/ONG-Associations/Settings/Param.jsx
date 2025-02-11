@@ -1,11 +1,11 @@
 import {useEffect, useState} from 'react';
-import {logoutUser} from "../../../Services/auth.js";
-import { FileText, Settings, Users, LogOut, Menu, X, Lock, User, Shield, HelpCircle, Info } from 'lucide-react';
+import { logoutUser } from "../../../Services/auth.js";
+import {Settings, LogOut, Menu, X, Lock, User, Shield } from 'lucide-react';
 import api from "../../../Services/api.js";
 import Alert from "../../../components/ui/alert.jsx";
 import {AlertDescription} from "@chakra-ui/react";
 
-const ParameterPage = () => {
+const ParamPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('profile');
     const [userId, setUserId] = useState(null);
@@ -53,20 +53,26 @@ const ParameterPage = () => {
     const initializeFormData = (profile) => {
         if (!profile) return;
 
+        console.log('Initializing form with profile:', profile); // Add this line
+
         const baseData = {
             email: profile.user?.email || '',
             phone: profile.user?.phone || '',
         };
-
-            setFormData({
-                ...baseData,
-                first_name: profile.first_name || '',
-                last_name: profile.last_name || '',
-                bio: profile.bio || ''
-            });
+        setFormData({
+            ...baseData,
+            organization_name: profile.organization_name || '',
+            registration_number: profile.registration_number || '',
+            founded_year: profile.founded_year || '',
+            mission_statement: profile.mission_statement || '',
+            website_url: profile.website_url || '',
+            bio: profile.bio || ''
+        });
     };
 
     const validateForm = () => {
+        console.log('Validating form with data:', formData);
+
         if (!formData.email?.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
             setError('Please enter a valid email address');
             return false;
@@ -77,16 +83,17 @@ const ParameterPage = () => {
             return false;
         }
 
-        if (!formData.first_name || !formData.last_name) {
-                setError('First and last name are required');
-                return false;
+        if (!formData.organization_name || !formData.registration_number) {
+            setError('Organization name and registration number are required');
+            return false;
         }
 
         return true;
     };
 
     const handleInputChange = (e) => {
-        const {name, value} = e.target;
+        const { name, value } = e.target;
+        console.log('Input changed:', name, value); // Add this line
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -94,7 +101,7 @@ const ParameterPage = () => {
     };
 
     const handlePasswordChange = (e) => {
-        const {name, value} = e.target;
+        const { name, value } = e.target;
         setPasswordData(prev => ({
             ...prev,
             [name]: value
@@ -124,18 +131,21 @@ const ParameterPage = () => {
                     phone: formData.phone
                 }
             };
+            Object.assign(formattedData, {
+                organization_name: formData.organization_name,
+                registration_number: formData.registration_number,
+                founded_year: formData.founded_year,
+                mission_statement: formData.mission_statement,
+                website_url: formData.website_url,
+                bio: formData.bio
+            });
 
-                Object.assign(formattedData, {
-                    first_name: formData.first_name,
-                    last_name: formData.last_name,
-                    bio: formData.bio
-
-                });
-
+            console.log('Sending update:', formattedData); // Add this line
             await api.patch(`/users/${userId}/profile/`, formattedData);
             setSuccessMessage('Profile updated successfully');
             await fetchUserProfile(userId);
         } catch (err) {
+            console.error('Update error:', err.response); // Add this line
             setError(err.response?.data?.error || 'Failed to update profile');
         }
     };
@@ -240,39 +250,28 @@ const ParameterPage = () => {
                     {isMobileMenuOpen ? <X className="h-6 w-6"/> : <Menu className="h-6 w-6"/>}
                 </button>
             </div>
-            {/* Side Navigation */}
 
+            {/* Side Navigation */}
             <aside
                 className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
                     isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-                } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 shadow-xl`}>
+                } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:block shadow-xl`}>
                 <div className="p-6">
-                    <h2 className="text-white text-2xl font-bold mb-8 flex items-center">
-                        <FileText className="h-6 w-6 mr-2"/>
-                        EcoCommunity
+                    <h2 className="text-white text-2xl font-bold mb-8">
+                        Eco Community
                     </h2>
                     <nav className="space-y-2">
-                        <a href="/investors/project"
+                        <a href="/association/announce"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <FileText className="h-5 w-5"/>
-                            <span>Projets</span>
-                        </a>
-                        <a href="/investors/proposals"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <HelpCircle className="h-5 w-5"/>
-                            <span>Proposition d'aide</span>
-                        </a>
-                        <a href="/investors/opportunity"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <Info className="h-5 w-5"/>
+                            <Bell className="h-5 w-5"/>
                             <span>Annonces</span>
                         </a>
-                        <a href="/investors/collaborators"
+                        <a href="/association/events"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <Users className="h-5 w-5"/>
-                            <span>Collaborateurs</span>
+                            <Calendar className="h-5 w-5"/>
+                            <span>Événements</span>
                         </a>
-                        <a href="investors/settings"
+                        <a href="/association/settings"
                            className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg">
                             <Settings className="h-5 w-5"/>
                             <span>Paramètres</span>
@@ -290,7 +289,6 @@ const ParameterPage = () => {
                     </button>
                 </div>
             </aside>
-
             {/* Main Content */}
             <div className="lg:ml-64">
                 <div className="px-4 sm:px-6 lg:px-8 py-8 pt-24 lg:pt-8">
@@ -361,7 +359,7 @@ const ParameterPage = () => {
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
-                                            <User className="w-full h-full p-4 text-gray-400"/>
+                                            <User className="w-full h-full p-4 text-gray-400" />
                                         )}
                                     </div>
                                     <div>
@@ -380,32 +378,68 @@ const ParameterPage = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Noms
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="first_name"
-                                        value={formData.first_name}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Prenom
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="last_name"
-                                        value={formData.last_name}
-                                        onChange={handleInputChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                    />
-                                </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Nom de l'organisation
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="organization_name"
+                                                    value={formData.organization_name || ''}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Numéro d'enregistrement
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="registration_number"
+                                                    value={formData.registration_number || ''}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Année de création
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="founded_year"
+                                                    value={formData.founded_year || ''}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Site web
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    name="website_url"
+                                                    value={formData.website_url || ''}
+                                                    onChange={handleInputChange}
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Mission
+                                                </label>
+                                                <textarea
+                                                    name="mission_statement"
+                                                    value={formData.mission_statement || ''}
+                                                    onChange={handleInputChange}
+                                                    rows="4"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                ></textarea>
+                                            </div>
 
                                     {/* Common fields for all user types */}
                                     <div>
@@ -432,8 +466,6 @@ const ParameterPage = () => {
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                         />
                                     </div>
-
-                                    {/* Additional fields for organization */}
 
                                     {/* Bio field for all users */}
                                     <div className="md:col-span-2">
@@ -469,8 +501,7 @@ const ParameterPage = () => {
                         {activeTab === 'security' && (
                             <div className="space-y-6">
                                 <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Modifier le mot de
-                                        passe</h3>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Modifier le mot de passe</h3>
                                     <div className="space-y-4">
                                         <input
                                             type="password"
@@ -537,4 +568,4 @@ const ParameterPage = () => {
     );
 };
 
-export default ParameterPage;
+export default ParamPage;

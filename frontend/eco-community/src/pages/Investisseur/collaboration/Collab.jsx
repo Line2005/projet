@@ -69,8 +69,22 @@ const InvestorCollaboratorsPage = () => {
         }
     };
 
+    // Handle mobile menu
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden fixed top-4 right-4 z-50">
+                <button
+                    onClick={toggleMobileMenu}
+                    className="p-2 rounded-lg bg-emerald-600 text-white"
+                >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+            </div>
             {/* Side Navigation - Same as ProjectsPage */}
             <aside
                 className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
@@ -102,7 +116,7 @@ const InvestorCollaboratorsPage = () => {
                             <Users className="h-5 w-5"/>
                             <span>Collaborateurs</span>
                         </a>
-                        <a href="/settings"
+                        <a href="/investors/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Settings className="h-5 w-5"/>
                             <span>Paramètres</span>
@@ -120,48 +134,6 @@ const InvestorCollaboratorsPage = () => {
                     </button>
                 </div>
             </aside>
-
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden fixed top-4 right-4 z-20">
-                <button
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="p-2 bg-white rounded-lg shadow-md"
-                >
-                    {isMobileMenuOpen ? (
-                        <X className="h-6 w-6 text-gray-600"/>
-                    ) : (
-                        <Menu className="h-6 w-6 text-gray-600"/>
-                    )}
-                </button>
-            </div>
-
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <div className="lg:hidden fixed inset-0 bg-blue-800 z-10 p-6">
-                    <nav className="space-y-4">
-                        <a href="/investor/dashboard"
-                           className="flex items-center space-x-3 text-blue-100 hover:bg-blue-600/50 px-4 py-3 rounded-lg">
-                            <BarChart2 className="h-5 w-5"/>
-                            <span>Tableau de bord</span>
-                        </a>
-                        <a href="/investor/collaborators"
-                           className="flex items-center space-x-3 bg-blue-600/50 text-white px-4 py-3 rounded-lg">
-                            <Users className="h-5 w-5"/>
-                            <span>Mes Collaborations</span>
-                        </a>
-                        <a href="/investor/opportunities"
-                           className="flex items-center space-x-3 text-blue-100 hover:bg-blue-600/50 px-4 py-3 rounded-lg">
-                            <Info className="h-5 w-5"/>
-                            <span>Opportunités</span>
-                        </a>
-                        <a href="/investor/settings"
-                           className="flex items-center space-x-3 text-blue-100 hover:bg-blue-600/50 px-4 py-3 rounded-lg">
-                            <Settings className="h-5 w-5"/>
-                            <span>Paramètres</span>
-                        </a>
-                    </nav>
-                </div>
-            )}
 
             {/* Main Content */}
             <div className="lg:ml-64">

@@ -21,11 +21,13 @@ export const loginUser = async (credentials) => {
         localStorage.setItem('accessToken', data.tokens.access);
         localStorage.setItem('refreshToken', data.tokens.refresh);
         localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('userId', data.user.id);
 
         console.log('Stored Tokens:', {
             accessToken: localStorage.getItem('accessToken'),
             refreshToken: localStorage.getItem('refreshToken'),
-            userRole: localStorage.getItem('userRole')
+            userRole: localStorage.getItem('userRole'),
+            userId: localStorage.getItem('userId'),
         });
 
 

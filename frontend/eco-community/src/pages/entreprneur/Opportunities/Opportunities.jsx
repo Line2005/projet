@@ -1,6 +1,20 @@
 import React, {useEffect, useState} from 'react';
 import { logoutUser } from "../../../Services/auth.js";
-import { Search, FileText, Settings, LogOut, Calendar, MapPin, Users, HelpCircle, Info, Bell, HandHelping, AlertCircle } from 'lucide-react';
+import {
+    Search,
+    FileText,
+    Settings,
+    LogOut,
+    Calendar,
+    MapPin,
+    Users,
+    HelpCircle,
+    Info,
+    Bell,
+    HandHelping,
+    AlertCircle,
+    X, Menu
+} from 'lucide-react';
 import api from "../../../Services/api.js";
 import OpportunityDetailModal from "../../opportunityDetails/OpportunityDetails.jsx";
 
@@ -13,6 +27,7 @@ const OpportunityPage = () => {
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOpportunity, setSelectedOpportunity] = useState(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const categories = [
         { id: 'all', label: 'Tout' },
@@ -220,11 +235,27 @@ const OpportunityPage = () => {
         </div>
     );
 
+    // Handle mobile menu
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden fixed top-4 right-4 z-50">
+                <button
+                    onClick={toggleMobileMenu}
+                    className="p-2 rounded-lg bg-emerald-600 text-white"
+                >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+            </div>
             {/* Side Navigation - Same as ProjectsPage */}
             <aside
-                className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 hidden lg:block shadow-xl">
+                className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
+                    isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:block shadow-xl`}>
                 <div className="p-6">
                     <h2 className="text-white text-2xl font-bold mb-8 flex items-center">
                         <FileText className="h-6 w-6 mr-2"/>

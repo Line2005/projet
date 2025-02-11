@@ -6,14 +6,18 @@ from .views import RegisterView, LoginView, LogoutView, UserManagementView, User
     ProjectAPIView, ProjectUploadDocumentAPIView, ProjectUpdateStatusAPIView, HelpRequestAPIView, \
     HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
     ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView, PublicAnnouncementView, PublicEventView, \
-    AdminAnalyticsAPIView
+    AdminAnalyticsAPIView, UserView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
 
-    #Project
+    #User setting
+    path('user/profile/', UserView.as_view()),
+    path('users/<int:user_id>/profile/', UserView.as_view()),
+
+                  #Project
     # List and create projects
     path('projects/', ProjectAPIView.as_view(), name='project-list-create'),
     # Retrieve, update, or delete a specific project

@@ -27,6 +27,8 @@ import SettingsPage from "./pages/entreprneur/settings/Settings.jsx";
 import AdminDashboard from "./pages/Admin/Dashboard/Dashboard.jsx";
 import AdminProject from "./pages/Admin/Project/ProjectValidation.jsx";
 import AdminAnalytics from "./pages/Admin/Analyse/Statistics.jsx";
+import ParamPage from "./pages/ONG-Associations/Settings/Param.jsx";
+import ParameterPage from "./pages/Investisseur/settings/Parameter.jsx";
 
 
 // Protected Route Component
@@ -53,8 +55,6 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/*<Route path="/admin/dashboard" element={ <ProtectedRoute allowedRoles={["admin"]}> <AdminDashboard /> </ProtectedRoute>} />*/}
-
                 // Entrepreneur
                 //Role base authentication
                 <Route path="/entrepreneur/project" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <ProjectsPage /> </ProtectedRoute> }/>
@@ -74,6 +74,7 @@ function App() {
                 <Route path="/investors/proposals" element={ <ProtectedRoute allowedRoles={['investor']}> <HelpProposalsPage /> </ProtectedRoute>} />
                 <Route path="/investors/opportunity" element={ <ProtectedRoute allowedRoles={['investor']}> <AnnouncePage /> </ProtectedRoute>} />
                 <Route path="/investors/collaborators" element={ <ProtectedRoute allowedRoles={['investor']}><InvestorCollaboratorsPage /> </ProtectedRoute>} />
+                <Route path="/investors/settings" element={ <ProtectedRoute allowedRoles={['investor']}><ParameterPage /> </ProtectedRoute>} />
 
 
                 // ONG Association Parts
@@ -83,6 +84,7 @@ function App() {
                 <Route path="/association/events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <NGOEventsPage /> </ProtectedRoute>} />
                 <Route path="/association/create-events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <CreateEventPage /> </ProtectedRoute>} />
                 <Route path="/association/editing-events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <EditEventPage /> </ProtectedRoute>} />
+                <Route path="/association/settings" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <ParamPage /> </ProtectedRoute>} />
 
                 // Admin Parts
                 //Role base authentication

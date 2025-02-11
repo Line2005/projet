@@ -116,11 +116,27 @@ const ProjectsPage = () => {
         }
     };
 
+    // Handle mobile menu
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden fixed top-4 right-4 z-50">
+                <button
+                    onClick={toggleMobileMenu}
+                    className="p-2 rounded-lg bg-emerald-600 text-white"
+                >
+                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+            </div>
             {/* Side Navigation */}
             <aside
-                className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 hidden lg:block shadow-xl">
+                className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
+                    isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:block shadow-xl`}>
                 <div className="p-6">
                     <h2 className="text-white text-2xl font-bold mb-8 flex items-center">
                         <FileText className="h-6 w-6 mr-2"/>
@@ -170,43 +186,6 @@ const ProjectsPage = () => {
                     </button>
                 </div>
             </aside>
-
-            {/* Mobile Navigation */}
-            <div className="lg:hidden">
-                <div className="bg-gradient-to-r from-emerald-700 to-emerald-800 fixed w-full z-50 px-4 py-4 shadow-lg">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-white text-xl font-bold flex items-center">
-                            <FileText className="h-5 w-5 mr-2"/>
-                            EcoCommunity
-                        </h2>
-                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="text-white hover:bg-emerald-600/50 p-2 rounded-lg transition-colors">
-                            {isMobileMenuOpen ? <X className="h-6 w-6"/> : <Menu className="h-6 w-6"/>}
-                        </button>
-                    </div>
-                </div>
-                {isMobileMenuOpen && (
-                    <div className="fixed inset-0 bg-gradient-to-b from-emerald-700 to-emerald-800 z-40 pt-20">
-                        <nav className="p-4 space-y-2">
-                            <a href="#"
-                               className="block text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
-                                Tableau de bord
-                            </a>
-                            <a href="#" className="block bg-emerald-600/50 text-white px-4 py-3 rounded-lg shadow-md">
-                                Mes Projets
-                            </a>
-                            <a href="#"
-                               className="block text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
-                                Paramètres
-                            </a>
-                            <a href="#"
-                               className="block text-emerald-100 hover:bg-red-500/20 px-4 py-3 rounded-lg transition-all duration-200">
-                                Déconnexion
-                            </a>
-                        </nav>
-                    </div>
-                )}
-            </div>
 
             {/* Main Content */}
             <div className="lg:ml-64">
