@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Camera, Users, TrendingUp, PlusCircle } from 'lucide-react';
 import {useNavigate} from "react-router-dom";
+import agricultureImage from '../assets/agriculture.jpg'
+import artisanImage from '../assets/artisant.png'
+import educationImage from '../assets/education.jpeg'
+import  aboutImage from '../assets/aboutus.jpg'
 
 const EcoCommunity = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -155,7 +159,7 @@ const EcoCommunity = () => {
                             </div>
                             <div className="mt-12 -mb-16 sm:-mb-48 lg:m-0 lg:relative">
                                 <div className="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:max-w-none lg:px-0">
-                                    <img src="/api/placeholder/800/600" alt="Community Impact" className="w-full lg:absolute lg:inset-y-0 lg:left-0 lg:h-full lg:w-auto lg:max-w-none" />
+                                    <img src={aboutImage} alt="Community Impact" className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-xl"/>
                                 </div>
                             </div>
                         </div>
@@ -175,7 +179,7 @@ const EcoCommunity = () => {
                             {/* Project Card 1 */}
                             <div className="group relative bg-white rounded-lg shadow-lg overflow-hidden">
                                 <div className="relative w-full h-80 bg-white rounded-t-lg overflow-hidden group-hover:opacity-75">
-                                    <img src="/api/placeholder/400/320" alt="Coopérative Agricole" className="w-full h-full object-cover" />
+                                    <img src={agricultureImage} alt="Coopérative Agricole" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="p-6">
                                     <h3 className="text-lg font-medium text-gray-900">Coopérative Agricole Durable</h3>
@@ -190,7 +194,7 @@ const EcoCommunity = () => {
                             {/* Project Card 2 */}
                             <div className="group relative bg-white rounded-lg shadow-lg overflow-hidden">
                                 <div className="relative w-full h-80 bg-white rounded-t-lg overflow-hidden group-hover:opacity-75">
-                                    <img src="/api/placeholder/400/320" alt="Artisanat Local" className="w-full h-full object-cover" />
+                                    <img src={artisanImage} alt="Artisanat Local" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="p-6">
                                     <h3 className="text-lg font-medium text-gray-900">Artisanat Local Digital</h3>
@@ -205,7 +209,7 @@ const EcoCommunity = () => {
                             {/* Project Card 3 */}
                             <div className="group relative bg-white rounded-lg shadow-lg overflow-hidden">
                                 <div className="relative w-full h-80 bg-white rounded-t-lg overflow-hidden group-hover:opacity-75">
-                                    <img src="/api/placeholder/400/320" alt="Education Numérique" className="w-full h-full object-cover" />
+                                    <img src={educationImage} alt="Education Numérique" className="w-full h-full object-cover" />
                                 </div>
                                 <div className="p-6">
                                     <h3 className="text-lg font-medium text-gray-900">Éducation Numérique Rurale</h3>
@@ -331,7 +335,7 @@ const EcoCommunity = () => {
                     <div className="container mx-auto px-4">
                         <div className="flex flex-col md:flex-row items-center">
                             <div className="md:w-1/2 mb-8 md:mb-0">
-                                <img src="/api/placeholder/600/400" alt="About Us" className="rounded-lg shadow-xl" />
+                                <img src={aboutImage} alt="About Us" className="rounded-lg shadow-xl" />
                             </div>
                             <div className="md:w-1/2 md:pl-12">
                                 <h2 className="text-3xl font-bold mb-6">À Propos de Nous</h2>

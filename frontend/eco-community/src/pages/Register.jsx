@@ -1,6 +1,21 @@
 import React, { useState } from "react";
 import { registerUser } from '../services/register.js';
-import {Eye, EyeOff, Users, Building2, Rocket, Shield, AlertCircle, Check, Mail, Phone, Lock} from "lucide-react";
+import {
+    Eye,
+    EyeOff,
+    Users,
+    Building2,
+    Rocket,
+    Shield,
+    AlertCircle,
+    Check,
+    Mail,
+    Phone,
+    Lock,
+    User,
+    Link, Calendar
+} from "lucide-react";
+import Alert from "../components/ui/alert.jsx";
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -197,21 +212,21 @@ const Register = () => {
                                 </p>
 
                                 {submitStatus === "success" && (
-                                    <Alert className="mb-6 bg-emerald-50 border-emerald-200">
-                                        <Check className="h-4 w-4 text-emerald-600" />
-                                        <AlertDescription className="text-emerald-800">
-                                            Votre compte a été créé avec succès! Vous allez recevoir un email de confirmation.
-                                        </AlertDescription>
-                                    </Alert>
+                                    <Alert
+                                        type="success"
+                                        message="Votre compte a été créé avec succès!"
+                                        description="Vous allez recevoir un email de confirmation."
+                                        onClose={() => console.log('closed')}
+                                    />
                                 )}
 
                                 {submitStatus === "error" && (
-                                    <Alert className="mb-6 bg-red-50 border-red-200">
-                                        <AlertCircle className="h-4 w-4 text-red-600" />
-                                        <AlertDescription className="text-red-800">
-                                            {errors.submit}
-                                        </AlertDescription>
-                                    </Alert>
+                                    <Alert
+                                        type="success"
+                                        message="Votre compte n'a pas été créer!"
+                                        description={errors.submit}
+                                        onClose={() => console.log('closed')}
+                                    />
                                 )}
 
                                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -270,18 +285,22 @@ const Register = () => {
                                                 <label className="block text-sm font-medium text-gray-700">
                                                     Année de création
                                                 </label>
-                                                <input
-                                                    type="number"
-                                                    name="foundedYear"
-                                                    value={formData.foundedYear}
-                                                    onChange={handleChange}
-                                                    min="1900"
-                                                    max={new Date().getFullYear()}
-                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-                                                />
-                                                {errors.foundedYear && (
-                                                    <p className="mt-1 text-sm text-red-600">{errors.foundedYear}</p>
-                                                )}
+                                                <div className="relative">
+                                                    <Calendar
+                                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"/>
+                                                    <input
+                                                        type="number"
+                                                        name="foundedYear"
+                                                        value={formData.foundedYear}
+                                                        onChange={handleChange}
+                                                        min="1900"
+                                                        max={new Date().getFullYear()}
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                                                    />
+                                                    {errors.foundedYear && (
+                                                        <p className="mt-1 text-sm text-red-600">{errors.foundedYear}</p>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div>
@@ -302,16 +321,20 @@ const Register = () => {
                                                 <label className="block text-sm font-medium text-gray-700">
                                                     Site Web
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    name="organizationName"
-                                                    value={formData.websiteUrl}
-                                                    onChange={handleChange}
-                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-                                                />
-                                                {errors.organizationName && (
-                                                    <p className="mt-1 text-sm text-red-600">{errors.websiteUrl}</p>
-                                                )}
+                                                <div className="relative">
+                                                    <Link
+                                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"/>
+                                                    <input
+                                                        type="text"
+                                                        name="organizationName"
+                                                        value={formData.websiteUrl}
+                                                        onChange={handleChange}
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                                                    />
+                                                    {errors.organizationName && (
+                                                        <p className="mt-1 text-sm text-red-600">{errors.websiteUrl}</p>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
@@ -321,32 +344,40 @@ const Register = () => {
                                                 <label className="block text-sm font-medium text-gray-700">
                                                     Prénom
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    name="firstName"
-                                                    value={formData.firstName}
-                                                    onChange={handleChange}
-                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-                                                />
-                                                {errors.firstName && (
-                                                    <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-                                                )}
+                                                <div className="relative">
+                                                    <User
+                                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"/>
+                                                    <input
+                                                        type="text"
+                                                        name="firstName"
+                                                        value={formData.firstName}
+                                                        onChange={handleChange}
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                                                    />
+                                                    {errors.firstName && (
+                                                        <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700">
                                                     Nom
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    name="lastName"
-                                                    value={formData.lastName}
-                                                    onChange={handleChange}
-                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-                                                />
-                                                {errors.lastName && (
-                                                    <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                                                )}
+                                                <div className="relative">
+                                                    <User
+                                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"/>
+                                                    <input
+                                                        type="text"
+                                                        name="lastName"
+                                                        value={formData.lastName}
+                                                        onChange={handleChange}
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                                                    />
+                                                    {errors.lastName && (
+                                                        <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -421,28 +452,30 @@ const Register = () => {
                                             {errors.password && (
                                                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
                                             )}
-                                    </div>
+                                        </div>
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">
                                                 Confirmer le mot de passe
                                             </label>
                                             <div className="relative">
-                                                <input
-                                                    type={showConfirmPassword ? "text" : "password"}
-                                                    name="confirmPassword"
-                                                    value={formData.confirmPassword}
-                                                    onChange={handleChange}
-                                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                                                >
-                                                    {showConfirmPassword ? <EyeOff className="w-5 h-5"/> :
-                                                        <Eye className="w-5 h-5"/>}
-                                                </button>
+                                                <Lock  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"/>
+                                                    <input
+                                                        type={showConfirmPassword ? "text" : "password"}
+                                                        name="confirmPassword"
+                                                        value={formData.confirmPassword}
+                                                        onChange={handleChange}
+                                                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                                                    >
+                                                        {showConfirmPassword ? <EyeOff className="w-5 h-5"/> :
+                                                            <Eye className="w-5 h-5"/>}
+                                                    </button>
+
                                             </div>
                                             {errors.confirmPassword && (
                                                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>

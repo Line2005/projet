@@ -1,8 +1,9 @@
 import React from 'react';
+import { X } from 'lucide-react';
 
 const Alert = ({ type = 'info', message, description, onClose }) => {
     const alertStyles = {
-        base: "p-4 rounded-md border flex items-start",
+        base: "p-4 rounded-md border flex items-start gap-3",
         types: {
             info: "bg-blue-50 border-blue-500 text-blue-700",
             success: "bg-green-50 border-green-500 text-green-700",
@@ -12,17 +13,19 @@ const Alert = ({ type = 'info', message, description, onClose }) => {
     };
 
     return (
-        <div className={`${alertStyles.base} ${alertStyles.types[type]} shadow-md`}>
-            <div className="flex-grow">
-                <p className="font-semibold">{message}</p>
-                {description && <p className="text-sm mt-1">{description}</p>}
+        <div className={`${alertStyles.base} ${alertStyles.types[type]}`}>
+            <div className="flex-1">
+                <div className="font-medium">{message}</div>
+                {description && (
+                    <div className="mt-1 text-sm opacity-90">{description}</div>
+                )}
             </div>
             {onClose && (
                 <button
-                    className="ml-4 text-sm text-gray-500 hover:text-gray-700 focus:outline-none"
                     onClick={onClose}
+                    className="text-current opacity-70 hover:opacity-100"
                 >
-                    ✕
+                    <X size={20} />
                 </button>
             )}
         </div>

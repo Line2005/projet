@@ -29,6 +29,7 @@ import AdminProject from "./pages/Admin/Project/ProjectValidation.jsx";
 import AdminAnalytics from "./pages/Admin/Analyse/Statistics.jsx";
 import ParamPage from "./pages/ONG-Associations/Settings/Param.jsx";
 import ParameterPage from "./pages/Investisseur/settings/Parameter.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 
 
 // Protected Route Component
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/" element={<EcoCommunity />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/password" element={<ForgotPassword />} />
 
                 // Entrepreneur
                 //Role base authentication
