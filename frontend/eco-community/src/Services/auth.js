@@ -78,3 +78,74 @@ export const logoutUser = async () => {
         window.location.href = '/login';
     }
 };
+
+export const requestPasswordReset = async (email) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/password/reset/request/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to send reset code');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Request password reset error:', error);
+        throw error;
+    }
+};
+
+export const verifyResetCode = async (email, code) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/password/reset/verify/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, code }), // Remove the .join()
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Invalid verification code');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Verify reset code error:', error);
+        throw error;
+    }
+};
+
+export const resetPassword = async (email, code, newPassword, confirmPassword) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/password/reset/confirm/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email,
+                code, // Remove the .join()
+                new_password: newPassword,
+                confirm_password: confirmPassword,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Password reset failed');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Reset password error:', error);
+        throw error;
+    }
+};

@@ -6,6 +6,7 @@ import {Card} from "../../../components/ui/card.jsx";
 import toast from "react-hot-toast";
 import Progress from "../../../components/ui/progress.jsx";
 import ProposalProgress from "./progressBar.jsx";
+import ProposalDetailModal from "./PropositionModal.jsx";
 
 const HelpPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -16,6 +17,7 @@ const HelpPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [requestAmounts, setRequestAmounts] = useState({});
+    const [selectedProposal, setSelectedProposal] = useState(null);
 
     // Mock data for received help proposals
     useEffect(() => {
@@ -23,31 +25,46 @@ const HelpPage = () => {
     }, [activeFilter]);
 
     const transformProposal = (proposal, type) => {
-
         // Extract help request details more safely
         const helpRequest = proposal.help_request || {};
-        const helpRequestDetails = proposal.help_request_details || {};        const projectDetails = helpRequest.project || {};
+        const helpRequestDetails = proposal.help_request_details || {};
+        const projectDetails = helpRequest.project || {};
 
         return {
             id: proposal.id,
             type: type,
             helpRequestId: helpRequest.id,
-            projectName: helpRequestDetails.project_name || "Projet sans nom", // Fallback if name is missing
+            projectName: helpRequestDetails.project_name || "Projet sans nom",
             description: helpRequestDetails.specific_need || proposal.proposed_approach || "Aucune description",
             investor: proposal.investor_name || "Investisseur anonyme",
             mentor: proposal.investor_name || "Mentor anonyme",
             status: proposal.status || 'pending',
             submissionDate: new Date(proposal.created_at).toLocaleDateString(),
-            // Add additional fields based on proposal type
-            ...(type === 'financial' ? {
+
+            // Financial specific fields
+            ...(type === 'financial' && {
                 amount: parseFloat(proposal.investment_amount) || 0,
                 investmentType: proposal.investment_type,
                 requestedAmount: parseFloat(helpRequestDetails.amount_requested) || 0,
-            } : {
-                // Technical specific fields
+                paymentSchedule: proposal.payment_schedule,
+                expectedReturn: proposal.expected_return,
+                investment_amount: proposal.investment_amount,
+            }),
+
+            // Technical specific fields
+            ...(type === 'technical' && {
                 expertise: proposal.expertise,
-                duration: proposal.support_duration,
-            })
+                experience_level: proposal.experience_level,
+                availability: proposal.availability,
+                proposed_approach: proposal.proposed_approach,
+                additional_resources: proposal.additional_resources,
+                support_duration: proposal.support_duration,
+                expected_outcomes: proposal.expected_outcomes,
+            }),
+
+            // Common additional fields
+            additional_terms: proposal.additional_terms,
+            created_at: proposal.created_at,
         };
     };
 
@@ -223,7 +240,7 @@ const HelpPage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>
@@ -386,6 +403,7 @@ const HelpPage = () => {
                                                         </button>
                                                     </div>
                                                     <button
+                                                        onClick={() => setSelectedProposal(proposal)}
                                                         className="w-full mt-3 flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
                                                     >
                                                         <MessageCircle className="h-4 w-4 mr-2"/>
@@ -414,6 +432,12 @@ const HelpPage = () => {
                                 </div>
                             )}
                         </>
+                    )}
+                    {selectedProposal && (
+                        <ProposalDetailModal
+                            proposal={selectedProposal}
+                            onClose={() => setSelectedProposal(null)}
+                        />
                     )}
                 </div>
             </div>

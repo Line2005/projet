@@ -6,12 +6,17 @@ from .views import RegisterView, LoginView, LogoutView, UserManagementView, User
     ProjectAPIView, ProjectUploadDocumentAPIView, ProjectUpdateStatusAPIView, HelpRequestAPIView, \
     HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
     ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView, PublicAnnouncementView, PublicEventView, \
-    AdminAnalyticsAPIView, UserView
+    AdminAnalyticsAPIView, UserView, VerifyResetCodeView, RequestPasswordResetView, ResetPasswordView
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
+
+    # Password reset URLs
+    path('password/reset/request/', RequestPasswordResetView.as_view(), name='request-password-reset'),
+    path('password/reset/verify/', VerifyResetCodeView.as_view(), name='verify-reset-code'),
+    path('password/reset/confirm/', ResetPasswordView.as_view(), name='reset-password'),
 
     #User setting
     path('user/profile/', UserView.as_view()),

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff, Users, TrendingUp, Camera, Mail, Lock } from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import {loginUser} from "../Services/auth";
+import Alert from "../components/ui/alert.jsx";
 
 const Login = () => {
     const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState(null);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -130,6 +132,24 @@ const Login = () => {
                             <div className="max-w-md mx-auto">
                                 <h2 className="text-3xl font-bold text-gray-900 mb-2">Connexion</h2>
                                 <p className="text-gray-600 mb-8">Accédez à votre espace entrepreneur</p>
+
+                                {submitStatus === "success" && (
+                                    <Alert
+                                        type="success"
+                                        message="Connexion effectué!"
+                                        description="Bienvenue sur EcoCommunity."
+                                        onClose={() => console.log('closed')}
+                                    />
+                                )}
+
+                                {submitStatus === "error" && (
+                                    <Alert
+                                        type="error"
+                                        message="Connexion echoué!"
+                                        description={errors.submit}
+                                        onClose={() => console.log('closed')}
+                                    />
+                                )}
 
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <div>

@@ -1,6 +1,19 @@
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {logoutUser} from "../../../Services/auth.js";
-import { FileText, Settings, Users, LogOut, Menu, X, Lock, User, Shield, HelpCircle, Info } from 'lucide-react';
+import {
+    FileText,
+    Settings,
+    Users,
+    LogOut,
+    Menu,
+    X,
+    Lock,
+    User,
+    Shield,
+    HelpCircle,
+    Info,
+    MessageSquare
+} from 'lucide-react';
 import api from "../../../Services/api.js";
 import Alert from "../../../components/ui/alert.jsx";
 import {AlertDescription} from "@chakra-ui/react";
@@ -257,6 +270,11 @@ const ParameterPage = () => {
                             <FileText className="h-5 w-5"/>
                             <span>Projets</span>
                         </a>
+                        <a href="/investors/messages"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                            <MessageSquare className="h-5 w-5"/>
+                            <span>Messages</span>
+                        </a>
                         <a href="/investors/proposals"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <HelpCircle className="h-5 w-5"/>
@@ -286,7 +304,7 @@ const ParameterPage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>

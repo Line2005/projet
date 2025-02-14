@@ -19,7 +19,7 @@ import {
     Clock,
     X as XMark,
     AlertCircle,
-    Trash2
+    Trash2, MessageSquare
 } from 'lucide-react';
 import api from "../../../Services/api.js";
 import {Card} from "../../../components/ui/card.jsx";
@@ -178,6 +178,11 @@ const HelpProposalsPage = () => {
                             <FileText className="h-5 w-5"/>
                             <span>Projets</span>
                         </a>
+                        <a href="/investors/messages"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                            <MessageSquare className="h-5 w-5"/>
+                            <span>Messages</span>
+                        </a>
                         <a href="/investors/proposals"
                            className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg">
                             <HelpCircle className="h-5 w-5"/>
@@ -207,7 +212,7 @@ const HelpProposalsPage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>

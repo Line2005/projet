@@ -222,7 +222,7 @@ const Register = () => {
 
                                 {submitStatus === "error" && (
                                     <Alert
-                                        type="success"
+                                        type="error"
                                         message="Votre compte n'a pas été créer!"
                                         description={errors.submit}
                                         onClose={() => console.log('closed')}

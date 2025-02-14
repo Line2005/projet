@@ -30,6 +30,7 @@ import AdminAnalytics from "./pages/Admin/Analyse/Statistics.jsx";
 import ParamPage from "./pages/ONG-Associations/Settings/Param.jsx";
 import ParameterPage from "./pages/Investisseur/settings/Parameter.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
+import ChatPage from "./pages/Investisseur/Chat/ChatPage.jsx";
 
 
 // Protected Route Component
@@ -76,6 +77,7 @@ function App() {
                 <Route path="/investors/proposals" element={ <ProtectedRoute allowedRoles={['investor']}> <HelpProposalsPage /> </ProtectedRoute>} />
                 <Route path="/investors/opportunity" element={ <ProtectedRoute allowedRoles={['investor']}> <AnnouncePage /> </ProtectedRoute>} />
                 <Route path="/investors/collaborators" element={ <ProtectedRoute allowedRoles={['investor']}><InvestorCollaboratorsPage /> </ProtectedRoute>} />
+                <Route path="/investors/messages" element={ <ProtectedRoute allowedRoles={['investor']}><ChatPage /> </ProtectedRoute>} />
                 <Route path="/investors/settings" element={ <ProtectedRoute allowedRoles={['investor']}><ParameterPage /> </ProtectedRoute>} />
 
 

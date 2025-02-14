@@ -137,6 +137,24 @@ class PasswordUpdateSerializer(serializers.Serializer):
             raise serializers.ValidationError("New passwords don't match")
         return data
 
+#Forgot password
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class VerifyResetCodeSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(min_length=6, max_length=6)
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(min_length=6, max_length=6)
+    new_password = serializers.CharField(min_length=8)
+    confirm_password = serializers.CharField(min_length=8)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("Passwords do not match")
+        return data
 
 # Admin handling users
 class UserListSerializer(serializers.ModelSerializer):
@@ -509,13 +527,15 @@ class HelpRequestSerializer(serializers.ModelSerializer):
 
         request = self.context.get('request')
         documents = []
+
+        # If we have project documents but no request object, return URLs without absolute paths
         for doc in obj.project.documents.all():
-            file_url = request.build_absolute_uri(doc.file.url) if doc.file else None
+            file_url = request.build_absolute_uri(doc.file.url) if request and doc.file else (
+                doc.file.url if doc.file else None)
             documents.append({
                 'document_type': doc.document_type,
                 'uploaded_at': doc.uploaded_at,
                 'file_url': file_url,
-
             })
 
         return {

@@ -177,16 +177,22 @@ const HelpRequestForm = () => {
                         </div>
                     </div>
 
-                    {(error || success) && (
-                        <Alert className="mb-6">
-                            <AlertDescription>
-                                {error ? (
-                                    <span className="text-red-600">{error}</span>
-                                ) : (
-                                    <span className="text-green-600">{success}</span>
-                                )}
-                            </AlertDescription>
-                        </Alert>
+                    {(success) && (
+                        <Alert
+                            type="success"
+                            message="Connexion effectué!"
+                            description={success}
+                            onClose={() => console.log('closed')}
+                        />
+                    )}
+
+                    {(error) && (
+                        <Alert
+                            type="error"
+                            message="Votre compte n'a pas été créer!"
+                            description={error}
+                            onClose={() => console.log('closed')}
+                        />
                     )}
 
                     <div className="max-w-3xl mx-auto">

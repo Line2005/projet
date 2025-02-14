@@ -1,10 +1,14 @@
 import base64
 import json
 import os
+import random
 import traceback
 import uuid
 from collections import defaultdict
 
+import yagmail
+from django.contrib.auth.password_validation import validate_password
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models.functions import TruncMonth
@@ -36,6 +40,7 @@ import pdfkit
 import logging
 
 
+
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from .models import Organization, Entrepreneur, Investor, ProjectDocument, Project, HelpRequest, TechnicalRequest, \
@@ -46,7 +51,10 @@ from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpd
     HelpRequestSerializer, TechnicalProposalSerializer, FinancialProposalSerializer, CollaborationSerializer, \
     ContractSerializer, CollaborationStatsSerializer, AnnouncementSerializer, EventSerializer, \
     OrganizationDetailSerializer, UserDetailSerializer, OrganizationUpdateSerializer, PasswordUpdateSerializer, \
-    EntrepreneurProfileSerializer, InvestorProfileSerializer, OrganizationProfileSerializer
+    EntrepreneurProfileSerializer, InvestorProfileSerializer, OrganizationProfileSerializer, \
+    PasswordResetConfirmSerializer, VerifyResetCodeSerializer, PasswordResetRequestSerializer
+
+CustomUser = get_user_model()
 
 
 class RegisterView(APIView):
@@ -166,6 +174,136 @@ class LogoutView(APIView):
                     {"error": "Invalid token"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
+
+#Forgot Password
+# Email configuration
+username = "yvangodimomo@gmail.com"
+password = "pzls apph esje cgdl"
+yag = yagmail.SMTP(username, password)
+
+def generate_reset_code():
+    return ''.join([str(random.randint(0, 9)) for _ in range(6)])
+
+class RequestPasswordResetView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            serializer = PasswordResetRequestSerializer(data=request.data)
+            if serializer.is_valid():
+                email = serializer.validated_data['email']
+
+                try:
+                    user = CustomUser.objects.get(email=email)
+                except CustomUser.DoesNotExist:
+                    return Response(
+                        {'error': 'No account found with this email'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+                reset_code = generate_reset_code()
+                cache_key = f'password_reset_{email}'
+                cache.set(cache_key, reset_code, timeout=300)
+
+                subject = "Password Reset Code"
+                contents = [
+                    f"Your password reset code is: {reset_code}",
+                    "This code will expire in 5 minutes.",
+                    "If you didn't request this reset, please ignore this email."
+                ]
+
+                yag.send(to=email, subject=subject, contents=contents)
+
+                return Response({
+                    'message': 'Reset code sent successfully',
+                    'email': email
+                })
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class VerifyResetCodeView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            serializer = VerifyResetCodeSerializer(data=request.data)
+            if serializer.is_valid():
+                email = serializer.validated_data['email']
+                submitted_code = serializer.validated_data['code']
+
+                cache_key = f'password_reset_{email}'
+                stored_code = cache.get(cache_key)
+
+                if not stored_code:
+                    return Response(
+                        {'error': 'Reset code has expired'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                if submitted_code != stored_code:
+                    return Response(
+                        {'error': 'Invalid reset code'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                return Response({'message': 'Code verified successfully'})
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            serializer = PasswordResetConfirmSerializer(data=request.data)
+            if serializer.is_valid():
+                email = serializer.validated_data['email']
+                submitted_code = serializer.validated_data['code']
+                new_password = serializer.validated_data['new_password']
+
+                cache_key = f'password_reset_{email}'
+                stored_code = cache.get(cache_key)
+
+                if not stored_code or submitted_code != stored_code:
+                    return Response(
+                        {'error': 'Invalid or expired reset code'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                try:
+                    user = CustomUser.objects.get(email=email)
+                    validate_password(new_password, user)
+                    user.set_password(new_password)
+                    user.save()
+
+                    cache.delete(cache_key)
+
+                    subject = "Password Reset Successful"
+                    contents = [
+                        "Your password has been successfully reset.",
+                        "If you didn't make this change, please contact support immediately."
+                    ]
+                    yag.send(to=email, subject=subject, contents=contents)
+
+                    return Response({'message': 'Password reset successful'})
+                except CustomUser.DoesNotExist:
+                    return Response(
+                        {'error': 'User not found'},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+                except ValidationError as e:
+                    return Response(
+                        {'error': e.messages},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 #admin signup
 class AdminSignupView(APIView):
@@ -747,8 +885,9 @@ class HelpRequestAPIView(APIView):
             technical_serializer.is_valid(raise_exception=True)
             technical_serializer.save(help_request=help_request)
 
+        # In HelpRequestAPIView.post()
         return Response(
-            HelpRequestSerializer(help_request).data,
+            HelpRequestSerializer(help_request, context={'request': request}).data,
             status=status.HTTP_201_CREATED
         )
 

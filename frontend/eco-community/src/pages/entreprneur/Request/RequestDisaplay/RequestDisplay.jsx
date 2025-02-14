@@ -1,6 +1,25 @@
 import React, {useEffect, useState} from 'react';
 import { logoutUser } from "../../../../Services/auth.js";
-import { FileText, HelpCircle, Info, Users, Calendar, BarChart2, Settings, LogOut, Menu, X, DollarSign, Search, CheckCircle, XCircle, Eye, Wrench, HelpingHand } from 'lucide-react';
+import {
+    FileText,
+    HelpCircle,
+    Info,
+    Users,
+    Calendar,
+    BarChart2,
+    Settings,
+    LogOut,
+    Menu,
+    X,
+    DollarSign,
+    Search,
+    CheckCircle,
+    XCircle,
+    Eye,
+    Wrench,
+    HelpingHand,
+    Trash
+} from 'lucide-react';
 import HelpRequestDetails from "../details/RequestModal.jsx";
 import api from "../../../../Services/api.js";
 import {Card} from "../../../../components/ui/card.jsx";
@@ -47,10 +66,24 @@ const HelpRequestsListPage = () => {
             );
 
             // Add a success notification
+            fetchHelpRequests();
 
         } catch (error) {
             console.error('Error updating request:', error);
 
+        }
+    };
+
+    const handleDeleteRequest = async (requestId) => {
+        if (window.confirm('Are you sure you want to delete this project?')) {
+            try {
+                // Fix the string template syntax
+                const response = await api.delete(`/help-requests/${requestId}/`);
+                // Refresh projects list after deletion
+                fetchHelpRequests();
+            } catch (error) {
+                console.error('Error deleting project:', error);
+            }
         }
     };
 
@@ -213,7 +246,7 @@ const HelpRequestsListPage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>
@@ -380,16 +413,29 @@ const HelpRequestsListPage = () => {
                                                     {updatingRequestId === request.id ? 'Mise à jour...' : 'Non Résolu'}
                                                 </button>
                                             </div>
-                                            <button
-                                                className="w-full flex items-center justify-center px-4 py-2 border-2 border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all duration-200"
-                                                onClick={() => {
-                                                    setSelectedRequest(request);
-                                                    setIsDetailsOpen(true);
-                                                }}
-                                            >
-                                                <Eye className="h-4 w-4 mr-2"/>
-                                                Voir Détails
-                                            </button>
+                                            <div className="flex flex-col space-y-2">
+                                                <div className="flex space-x-2">
+                                                    <button
+                                                        className="w-full flex items-center justify-center px-4 py-2 border-2 border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all duration-200"
+                                                        onClick={() => {
+                                                            setSelectedRequest(request);
+                                                            setIsDetailsOpen(true);
+                                                        }}
+                                                    >
+                                                        <Eye className="h-4 w-4 mr-2"/>
+                                                        Voir Détails
+                                                    </button>
+                                                    <button
+                                                        className="w-full flex items-center justify-center px-4 py-2 border-2 border-red-400 text-red-600 rounded-lg hover:bg-emerald-50 transition-all duration-200"
+                                                        onClick={() => {
+                                                            handleDeleteRequest(request?.id);
+                                                        }}
+                                                    >
+                                                        <Trash className="h-4 w-4 mr-2"/>
+                                                        Supprimer
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -402,7 +448,7 @@ const HelpRequestsListPage = () => {
                     {filteredRequests.length === 0 && (
                         <div className="text-center py-12">
                             <div className="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto">
-                                <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4"/>
                                 <h3 className="text-xl font-bold text-gray-900 mb-2">Aucune demande trouvée</h3>
                                 <p className="text-gray-600">
                                     {searchQuery
