@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import { logoutUser } from "../../../Services/auth.js";
-import {Settings, LogOut, Menu, X, Lock, User, Shield } from 'lucide-react';
+import {Settings, LogOut, Menu, X, Lock, User, Shield, Bell, Calendar } from 'lucide-react';
 import api from "../../../Services/api.js";
 import Alert from "../../../components/ui/alert.jsx";
 import {AlertDescription} from "@chakra-ui/react";

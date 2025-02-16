@@ -18,7 +18,7 @@ import {
     Info,
     Bell,
     Tag,
-    AlertCircle
+    AlertCircle, MessageSquare
 } from 'lucide-react';
 import api from "../../../Services/api.js";
 import OpportunityDetailModal from "../../opportunityDetails/OpportunityDetails.jsx";
@@ -266,34 +266,39 @@ const AnnouncePage = () => {
                         <FileText className="h-6 w-6 mr-2"/>
                         EcoCommunity
                     </h2>
-                    <nav className="space-y-2">
-                        <a href="/investors/project"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
-                            <FileText className="h-5 w-5"/>
-                            <span>Projets</span>
-                        </a>
-                        <a href="/investors/proposals"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
-                            <HelpCircle className="h-5 w-5"/>
-                            <span>Demande d'aide</span>
-                        </a>
-                        <a href="/investors/opportunity"
-                           className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg shadow-md">
-                            <Info className="h-5 w-5"/>
-                            <span>Annonces</span>
-                        </a>
-                        <a href="/investors/collaborators"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
-                            <Users className="h-5 w-5"/>
-                            <span>Collaborateurs</span>
-                        </a>
-                        <a href="/investors/settings"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
-                            <Settings className="h-5 w-5"/>
-                            <span>Paramètres</span>
-                        </a>
-                    </nav>
-                </div>
+                <nav className="space-y-2">
+                    <a href="/investors/project"
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                        <FileText className="h-5 w-5"/>
+                        <span>Projets</span>
+                    </a>
+                    <a href="/investors/messages"
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                        <MessageSquare className="h-5 w-5"/>
+                        <span>Messages</span>
+                    </a>
+                    <a href="/investors/proposals"
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                        <HelpCircle className="h-5 w-5"/>
+                        <span>Proposition d'aide</span>
+                    </a>
+                    <a href="/investors/opportunity"
+                       className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg shadow-md">
+                        <Info className="h-5 w-5"/>
+                        <span>Annonces</span>
+                    </a>
+                    <a href="/investors/collaborators"
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                        <Users className="h-5 w-5"/>
+                        <span>Collaborateurs</span>
+                    </a>
+                    <a href="/investors/settings"
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                        <Settings className="h-5 w-5"/>
+                        <span>Paramètres</span>
+                    </a>
+                </nav>
+            </div>
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                     <button
                         onClick={handleLogout}
