@@ -29,9 +29,10 @@ ALLOWED_HOSTS = []
 
 from datetime import timedelta # import this library top of the settings.py file
 
+# import sys
+# print(sys.path)
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -39,10 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'rest_framework',
     'rest_framework_simplejwt',
-    'corsheaders',
     'main',
+    'corsheaders',
+
 ]
 
 # put on your settings.py file below INSTALLED_APPS
@@ -57,6 +60,14 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',  # For browsable API
     ],
+}
+
+#
+ASGI_APPLICATION = 'backend_api.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
 }
 
 SIMPLE_JWT = {

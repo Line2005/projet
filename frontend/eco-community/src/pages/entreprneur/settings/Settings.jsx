@@ -1,6 +1,20 @@
 import React, {useEffect, useState} from 'react';
 import { logoutUser } from "../../../Services/auth.js";
-import { FileText, Settings, Users, LogOut, Menu, X, Lock, User, Shield, HelpCircle, Info, HandHelping } from 'lucide-react';
+import {
+    FileText,
+    Settings,
+    Users,
+    LogOut,
+    Menu,
+    X,
+    Lock,
+    User,
+    Shield,
+    HelpCircle,
+    Info,
+    HandHelping,
+    MessageSquare
+} from 'lucide-react';
 import api from "../../../Services/api.js";
 import Alert from "../../../components/ui/alert.jsx";
 import {AlertDescription} from "@chakra-ui/react";
@@ -252,6 +266,11 @@ const SettingsPage = () => {
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                             <FileText className="h-5 w-5"/>
                             <span>Mes Projets</span>
+                        </a>
+                        <a href="/entrepreneur/messages"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                            <MessageSquare className="h-5 w-5"/>
+                            <span>Messages</span>
                         </a>
                         <a href="/entrepreneur/demandes"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">

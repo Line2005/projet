@@ -1,12 +1,17 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework.routers import DefaultRouter
+
 from . import views
 from .views import RegisterView, LoginView, LogoutView, UserManagementView, UserStatsView, AdminSignupView, \
     ProjectAPIView, ProjectUploadDocumentAPIView, ProjectUpdateStatusAPIView, HelpRequestAPIView, \
     HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
     ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView, PublicAnnouncementView, PublicEventView, \
-    AdminAnalyticsAPIView, UserView, VerifyResetCodeView, RequestPasswordResetView, ResetPasswordView
+    AdminAnalyticsAPIView, UserView, VerifyResetCodeView, RequestPasswordResetView, ResetPasswordView, \
+    ConversationListAPIView, ConversationDetailAPIView, ConversationMessagesAPIView
+
+router = DefaultRouter()
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -22,7 +27,7 @@ urlpatterns = [
     path('user/profile/', UserView.as_view()),
     path('users/<int:user_id>/profile/', UserView.as_view()),
 
-                  #Project
+    #Project
     # List and create projects
     path('projects/', ProjectAPIView.as_view(), name='project-list-create'),
     # Retrieve, update, or delete a specific project
@@ -55,7 +60,12 @@ urlpatterns = [
     # Collaboration endpoints
     path('collaborations/', CollaborationAPIView.as_view(), name='collaboration-list'),
 
-    #Announcement
+    #Messages
+    path('conversations/', ConversationListAPIView.as_view(), name='conversation-list'),
+    path('conversations/<int:pk>/', ConversationDetailAPIView.as_view(), name='conversation-detail'),
+    path('conversations/<int:pk>/messages/', ConversationMessagesAPIView.as_view(), name='conversation-messages'),
+
+                  #Announcement
     path('announcements/', AnnouncementAPIView.as_view(), name='announcements'),
     path('announcements/<int:pk>/', AnnouncementAPIView.as_view(), name='announcement-detail'),
 
@@ -79,4 +89,7 @@ urlpatterns = [
     path('admin/users/<int:user_id>', UserManagementView.as_view(), name='admin-user-update'),
     path('admin/users/stats', UserStatsView.as_view(), name='admin-user-stats'),
     path('admin/analytics/', AdminAnalyticsAPIView.as_view(), name='admin-analytics'),
+
+                  # Include router URLs
+                  *router.urls,
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

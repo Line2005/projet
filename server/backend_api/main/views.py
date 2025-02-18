@@ -28,7 +28,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.db.models import Count, Q, Sum, When, Case, F, ExpressionWrapper, FloatField  # Added Q here
 from django.shortcuts import get_object_or_404
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, PermissionDenied
 from django.contrib.auth.hashers import check_password, make_password
 
 from .contract import ContractHandler
@@ -44,7 +44,8 @@ import logging
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from .models import Organization, Entrepreneur, Investor, ProjectDocument, Project, HelpRequest, TechnicalRequest, \
-    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, User, Announcement, Event
+    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, User, Announcement, Event, \
+    Conversation
 from .permission import IsProposalOwnerOrRequestEntrepreneur
 from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpdateSerializer, UserListSerializer, \
     UserCreateSerializer, InvestorSerializer, ProjectSerializer, FinancialRequestSerializer, TechnicalRequestSerializer, \
@@ -52,7 +53,8 @@ from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpd
     ContractSerializer, CollaborationStatsSerializer, AnnouncementSerializer, EventSerializer, \
     OrganizationDetailSerializer, UserDetailSerializer, OrganizationUpdateSerializer, PasswordUpdateSerializer, \
     EntrepreneurProfileSerializer, InvestorProfileSerializer, OrganizationProfileSerializer, \
-    PasswordResetConfirmSerializer, VerifyResetCodeSerializer, PasswordResetRequestSerializer
+    PasswordResetConfirmSerializer, VerifyResetCodeSerializer, PasswordResetRequestSerializer, MessageSerializer, \
+    ConversationSerializer
 
 CustomUser = get_user_model()
 
@@ -2059,5 +2061,124 @@ class AdminAnalyticsAPIView(APIView):
         except Exception as e:
             return Response(
                 {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+#Messages
+class ConversationListAPIView(APIView):
+    def get(self, request):
+        help_request_id = request.query_params.get('help_request')
+
+        if help_request_id:
+            try:
+                help_request = HelpRequest.objects.get(id=help_request_id)
+                # Get the investor instance for the current user
+                investor = request.user.investor  # Assuming there's a one-to-one relationship
+
+                conversation, created = Conversation.objects.get_or_create(
+                    help_request=help_request,
+                    investor=investor,  # Add the investor here
+                    defaults={
+                        'help_request': help_request,
+                        'investor': investor
+                    }
+                )
+                serializer = ConversationSerializer([conversation], many=True, context={'request': request})
+                return Response(serializer.data)
+            except HelpRequest.DoesNotExist:
+                return Response(
+                    {'error': 'Help request not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            except Investor.DoesNotExist:
+                return Response(
+                    {'error': 'User is not an investor'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        else:
+            # Return all conversations for the current user based on their role
+            if request.user.role == 'investor':
+                try:
+                    investor = request.user.investor
+                    conversations = Conversation.objects.filter(investor=investor)
+                    serializer = ConversationSerializer(conversations, many=True, context={'request': request})
+                    return Response(serializer.data)
+                except Investor.DoesNotExist:
+                    return Response(
+                        {'error': 'User is not an investor'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            elif request.user.role == 'entrepreneur':
+                try:
+                    entrepreneur = request.user.entrepreneur
+                    conversations = Conversation.objects.filter(help_request__entrepreneur=entrepreneur)
+                    serializer = ConversationSerializer(conversations, many=True, context={'request': request})
+                    return Response(serializer.data)
+                except Entrepreneur.DoesNotExist:
+                    return Response(
+                        {'error': 'User is not an entrepreneur'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                return Response(
+                    {'error': 'Invalid user role'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+
+class ConversationDetailAPIView(APIView):
+    def get(self, request, pk):
+        conversation = get_object_or_404(Conversation, pk=pk)
+        if not self.has_permission(request.user, conversation):
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = ConversationSerializer(conversation, context={'request': request})
+        return Response(serializer.data)
+
+    def has_permission(self, user, conversation):
+        if user.role == 'investor':
+            return conversation.help_request.project.investors.filter(id=user.id).exists()
+        elif user.role == 'entrepreneur':
+            return conversation.help_request.entrepreneur.user == user
+        return False
+
+
+class ConversationMessagesAPIView(APIView):
+    def get_conversation(self, pk, user):
+        conversation = get_object_or_404(Conversation, pk=pk)
+
+        # Check permissions
+        if user.role == 'investor':
+            # Verify this investor is part of this conversation
+            if not conversation.investor.user == user:
+                raise PermissionDenied("You are not the investor in this conversation")
+        elif user.role == 'entrepreneur':
+            # Verify this entrepreneur owns the help request
+            if conversation.help_request.entrepreneur.user != user:
+                raise PermissionDenied("You are not the entrepreneur for this help request")
+        else:
+            raise PermissionDenied("You must be an investor or entrepreneur to access this conversation")
+
+        return conversation
+
+    def get(self, request, pk):
+        try:
+            conversation = self.get_conversation(pk, request.user)
+            messages = conversation.messages.all()
+
+            # Mark messages as read
+            messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+
+            serializer = MessageSerializer(messages, many=True, context={'request': request})
+            return Response(serializer.data)
+
+        except PermissionDenied as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        except Exception as e:
+            return Response(
+                {'error': 'An error occurred while fetching messages'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

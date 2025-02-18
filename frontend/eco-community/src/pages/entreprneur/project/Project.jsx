@@ -2,7 +2,25 @@ import React, {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from "../../../Services/auth.js";
 
-import { Search, Plus, BarChart2, FileText, Settings, LogOut, Menu, X, Calendar, MapPin, Users, DollarSign, HelpCircle, Info, HandHelping, Trash2 } from 'lucide-react';
+import {
+    Search,
+    Plus,
+    BarChart2,
+    FileText,
+    Settings,
+    LogOut,
+    Menu,
+    X,
+    Calendar,
+    MapPin,
+    Users,
+    DollarSign,
+    HelpCircle,
+    Info,
+    HandHelping,
+    Trash2,
+    MessageSquare
+} from 'lucide-react';
 
 import api from "../../../Services/api.js";
 import {ProjectDetailsCard} from "./detail/ProjectModal.jsx";
@@ -147,6 +165,11 @@ const ProjectsPage = () => {
                            className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg shadow-md"><FileText
                             className="h-5 w-5"/>
                             <span>Mes Projets</span>
+                        </a>
+                        <a href="/entrepreneur/messages"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                            <MessageSquare className="h-5 w-5"/>
+                            <span>Messages</span>
                         </a>
                         <a href="/entrepreneur/demandes"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">

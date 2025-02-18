@@ -468,3 +468,27 @@ class Event(models.Model):
     @property
     def is_draft(self):
         return self.status == 'draft'
+
+#Messages
+class Conversation(models.Model):
+    help_request = models.ForeignKey(HelpRequest, on_delete=models.CASCADE, related_name='conversations')
+    investor = models.ForeignKey(Investor, on_delete=models.CASCADE)  # Add this field to track which investor is involved
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'conversation'
+        # Ensure one conversation per investor-help request pair
+        unique_together = ['help_request', 'investor']
+
+
+class Message(models.Model):
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'messages'
+        ordering = ['timestamp']

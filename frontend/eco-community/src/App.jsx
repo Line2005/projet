@@ -31,6 +31,7 @@ import ParamPage from "./pages/ONG-Associations/Settings/Param.jsx";
 import ParameterPage from "./pages/Investisseur/settings/Parameter.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ChatPage from "./pages/Investisseur/Chat/ChatPage.jsx";
+import EntrepreneurChatPage from "./pages/entreprneur/Chat/MessagePage.jsx";
 
 
 // Protected Route Component
@@ -67,6 +68,7 @@ function App() {
                 <Route path="/entrepreneur/help" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <HelpPage /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/opportunity" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <OpportunityPage /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/collaborators" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <CollaboratorPage /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/messages" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <EntrepreneurChatPage /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/settings" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <SettingsPage /> </ProtectedRoute>} />
 
                 // Investors part

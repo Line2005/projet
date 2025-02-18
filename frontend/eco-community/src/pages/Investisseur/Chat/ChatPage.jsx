@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     FileText, HelpCircle, Info, Users, Settings, LogOut,
     Menu, X, Search, MessageSquare, Send, ChevronLeft, Bell
@@ -8,6 +8,8 @@ import {NotificationDropdown} from "./components/NotificationDropdown.jsx";
 import {SidebarLink} from "./components/SideBarLink.jsx";
 import {ConversationItem} from "./components/ConversationItem.jsx";
 import {ChatMessage} from "./components/ChatMessage.jsx";
+import {useLocation, useNavigate} from "react-router-dom";
+import api from "../../../Services/api.js";
 
 const ChatPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -17,42 +19,331 @@ const ChatPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
+    const [socket, setSocket] = useState(null);
+    const [conversations, setConversations] = useState([]);
+    const [totalNotifications, setTotalNotifications] = useState(0);
+    const location = useLocation();
+    const navigate = useNavigate();
 
-    const totalNotifications = MOCK_CONVERSATIONS.reduce(
-        (sum, conv) => sum + conv.entrepreneur.unreadCount,
-        0
-    );
+    useEffect(() => {
+        // Check if we have an incoming conversation from help request
+        if (location.state?.selectedConversation) {
+            const incomingConversation = location.state.selectedConversation;
+            setSelectedChat(incomingConversation);
+            handleSelectChat(incomingConversation);
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location.state]);
 
-    const handleSendMessage = () => {
-        if (!newMessage.trim() || !selectedChat) return;
+    useEffect(() => {
+        fetchConversations();
+        // Set up polling for new conversations/messages
+        const pollInterval = setInterval(fetchConversations, 30000); // Poll every 30 seconds
+        return () => clearInterval(pollInterval);
+    }, []);
 
-        const newMsg = {
-            id: messages.length + 1,
-            content: newMessage,
-            timestamp: new Date().toISOString(),
-            is_sender: true
-        };
+    // Add console log to debug the selected chat data structure
+    useEffect(() => {
+        if (selectedChat) {
+            console.log('Selected Chat Data:', selectedChat);
+        }
+    }, [selectedChat]);
 
-        setMessages([...messages, newMsg]);
-        setNewMessage('');
+    useEffect(() => {
+        // Calculate total notifications whenever conversations change
+        const total = conversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+        setTotalNotifications(total);
+    }, [conversations]);
+
+    const fetchConversations = async () => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await api.get('/conversations/', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                // Handle unauthorized access
+                navigate('/login');
+                return;
+            }
+
+            setConversations(response.data);
+        } catch (error) {
+            console.error('Error fetching conversations:', {
+                error,
+                response: error.response,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+
+            if (error.response?.status === 401) {
+                navigate('/login');
+            }
+        }
     };
 
-    const handleSelectChat = (conversation) => {
+    const handleSelectChat = async (conversation) => {
+        if (!conversation?.id) {
+            console.error('Invalid conversation object:', conversation);
+            return;
+        }
+
+        // Close existing WebSocket before changing the selected chat
+        if (socket) {
+            socket.close();
+            setSocket(null);
+        }
+
         setSelectedChat(conversation);
-        setMessages(MOCK_MESSAGES[conversation.id] || []);
-        setIsMobileMenuOpen(false);
+
+        try {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const response = await api.get(`/conversations/${conversation.id}/messages/`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 401) {
+                navigate('/login');
+                return;
+            }
+
+            setMessages(response.data);
+
+            const newSocket = setupWebSocket(conversation);
+            setSocket(newSocket);
+        } catch (error) {
+            console.error('Error fetching messages:', {
+                error,
+                response: error.response,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+
+            if (error.response?.status === 401) {
+                navigate('/login');
+            }
+        }
+    };
+
+    const setupWebSocket = (conversation) => {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            console.error('No authentication token found');
+            return null;
+        }
+        // Determine WebSocket protocol based on HTTP protocol
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+        // Get the backend host
+        // This uses the current host, assuming your WebSocket server is on the same host
+        // Adjust if your WebSocket server is on a different host or port
+        const host = window.location.host;
+
+        // For development with React's dev server, we need to specify the backend port
+        const isDevMode = process.env.NODE_ENV === 'development';
+        const backendHost = isDevMode ? '127.0.0.1:8000' : host;
+
+        // Construct WebSocket URL
+        const wsUrl = `${wsProtocol}//${backendHost}/ws/chat/${conversation.id}/?token=${token}`;
+
+        console.log('Connecting to WebSocket:', wsUrl);
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            console.log(`WebSocket connected for conversation ${conversation.id}`);
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+
+                // Handle different message types
+                if (data.error) {
+                    console.error('WebSocket error message:', data.error);
+                    return;
+                }
+
+                if (data.type === 'user_joined' || data.type === 'user_left') {
+                    console.log(`User ${data.username} ${data.type}`);
+                    return;
+                }
+
+                // Handle regular chat messages
+                setMessages(prevMessages => [...prevMessages, {
+                    id: data.id || Date.now(), // Use timestamp as fallback ID
+                    content: data.message,
+                    timestamp: data.timestamp,
+                    is_sender: data.is_sender
+                }]);
+
+                fetchConversations();
+            } catch (e) {
+                console.error('Error parsing WebSocket message:', e);
+            }
+        };
+
+        ws.onclose = (event) => {
+            console.log(`WebSocket disconnected for conversation ${conversation.id}`, event);
+            console.log(`Close code: ${event.code}, reason: ${event.reason || 'No reason provided'}`);
+
+        };
+
+        // Add more comprehensive reconnection logic
+        ws.onclose = (event) => {
+            console.log(`WebSocket disconnected for conversation ${conversation.id}`, event);
+
+            if (event.code === 1006) {
+                console.log("Abnormal closure - server might be down or network issue");
+            } else if (event.code === 4003) {
+                console.log("Authentication required");
+                navigate('/login');
+                return; // Don't attempt reconnect if auth failed
+            }
+
+            // Only attempt reconnection for certain codes
+            if (![1000, 1001].includes(event.code)) {
+                attemptReconnect(conversation, 0);
+            }
+        };
+
+        return ws;
+    };
+
+    const attemptReconnect = (conversation, attempt = 0) => {
+        const maxAttempts = 5;
+        const backoff = Math.min(30, Math.pow(2, attempt)) * 1000; // Exponential backoff with max 30 seconds
+
+        if (attempt >= maxAttempts) {
+            console.log(`Maximum reconnection attempts (${maxAttempts}) reached for conversation ${conversation.id}`);
+            return;
+        }
+
+        console.log(`Attempting to reconnect (attempt ${attempt + 1}/${maxAttempts}) in ${backoff/1000} seconds...`);
+
+        setTimeout(() => {
+            // Only reconnect if this is still the selected chat
+            if (selectedChat && selectedChat.id === conversation.id) {
+                handleSelectChat(conversation);
+            }
+        }, backoff);
+    };
+
+    const handleSendMessage = () => {
+        if (!newMessage.trim() || !selectedChat || !socket) return;
+
+        try {
+            socket.send(JSON.stringify({
+                message: newMessage,
+                conversation_id: selectedChat.id,
+            }));
+            setNewMessage('');
+        } catch (error) {
+            console.error('Error sending message through WebSocket:', error);
+        }
+    };
+
+    // Helper function to safely get entrepreneur name
+    const getEntrepreneurName = (chat) => {
+        if (!chat?.help_request) {
+            return 'Unknown User';
+        }
+
+        // Case 1: Path from API response structure as seen in screenshots
+        if (chat.help_request.entrepreneur_details?.name) {
+            return chat.help_request.entrepreneur_details.name;
+        }
+
+        // Case 2: Original expected path (might not exist)
+        const entrepreneur = chat.help_request.entrepreneur;
+        if (typeof entrepreneur === 'object' && entrepreneur?.first_name && entrepreneur?.last_name) {
+            return `${entrepreneur.first_name} ${entrepreneur.last_name}`;
+        }
+
+        // Case 3: User object path (might not exist)
+        if (entrepreneur?.user?.first_name && entrepreneur?.user?.last_name) {
+            return `${entrepreneur.user.first_name} ${entrepreneur.user.last_name}`;
+        }
+
+        // Fallback
+        return 'Unknown User';
+    };
+
+// Helper function to safely get project name
+    const getProjectName = (chat) => {
+        if (!chat?.help_request) {
+            return 'Untitled Project';
+        }
+
+        // Case 1: From project_details in API response
+        if (chat.help_request.project_details?.project_name) {
+            return chat.help_request.project_details.project_name;
+        }
+
+        // Case 2: Original expected path
+        if (chat.help_request.project?.name) {
+            return chat.help_request.project.name;
+        }
+
+        // Case 3: Project object directly in help_request
+        if (chat.help_request.project?.project_name) {
+            return chat.help_request.project.project_name;
+        }
+
+        // Fallback
+        return 'Untitled Project';
     };
 
     const getFilteredConversations = () => {
-        return MOCK_CONVERSATIONS.filter(conversation => {
-            const searchLower = searchQuery.toLowerCase();
-            return (
-                conversation.entrepreneur.name.toLowerCase().includes(searchLower) ||
-                conversation.project.name.toLowerCase().includes(searchLower)
-            );
+        return conversations.filter(conversation => {
+            try {
+                const searchLower = searchQuery.toLowerCase();
+
+                // Safely get entrepreneur name
+                let entrepreneurName = '';
+                if (conversation?.help_request?.entrepreneur) {
+                    const entrepreneur = conversation.help_request.entrepreneur;
+                    entrepreneurName = `${entrepreneur.first_name || ''} ${entrepreneur.last_name || ''}`;
+
+                    // If that's empty, try the user property
+                    if (!entrepreneurName.trim() && entrepreneur.user) {
+                        entrepreneurName = `${entrepreneur.user.first_name || ''} ${entrepreneur.user.last_name || ''}`;
+                    }
+                }
+
+                // Safely get project name
+                let projectName = '';
+                if (conversation?.help_request?.project?.name) {
+                    projectName = conversation.help_request.project.name;
+                }
+
+                // Only filter if we have a search query
+                if (!searchLower) return true;
+
+                return (
+                    entrepreneurName.toLowerCase().includes(searchLower) ||
+                    projectName.toLowerCase().includes(searchLower)
+                );
+            } catch (err) {
+                console.error("Error filtering conversation:", err, conversation);
+                return false; // Skip this conversation if there's an error
+            }
         });
     };
-
     const handleLogout = async () => {
         if (isLoggingOut) return;
         setIsLoggingOut(true);
@@ -76,7 +367,8 @@ const ChatPage = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
             {/* Header */}
-            <div className="lg:pl-64 fixed top-0 right-0 left-0 z-40 bg-white border-b h-16 flex items-center justify-between px-4 shadow-sm">
+            <div
+                className="lg:pl-64 fixed top-0 right-0 left-0 z-40 bg-white border-b h-16 flex items-center justify-between px-4 shadow-sm">
                 <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
                 <div className="flex items-center space-x-4">
                     <div className="relative">
@@ -84,9 +376,10 @@ const ChatPage = () => {
                             onClick={() => setShowNotifications(!showNotifications)}
                             className="p-2 rounded-full hover:bg-gray-100 relative transition-colors duration-200"
                         >
-                            <Bell className="h-6 w-6 text-gray-600" />
+                            <Bell className="h-6 w-6 text-gray-600"/>
                             {totalNotifications > 0 && (
-                                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                <span
+                                    className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                                     {totalNotifications}
                                 </span>
                             )}
@@ -94,8 +387,9 @@ const ChatPage = () => {
 
                         {showNotifications && (
                             <NotificationDropdown
-                                notifications={MOCK_CONVERSATIONS.filter(conv => conv.entrepreneur.unreadCount > 0)}
+                                notifications={conversations.filter(conv => conv.unread_count > 0)}
                                 onClose={() => setShowNotifications(false)}
+                                onConversationClick={handleSelectChat}
                             />
                         )}
                     </div>
@@ -108,14 +402,15 @@ const ChatPage = () => {
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     className="p-2 rounded-lg bg-emerald-600 text-white shadow-lg hover:bg-emerald-700 transition-colors duration-200"
                 >
-                    {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                    {isMobileMenuOpen ? <X className="h-6 w-6"/> : <Menu className="h-6 w-6"/>}
                 </button>
             </div>
 
             {/* Sidebar */}
-            <aside className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
-                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-            } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 shadow-xl`}>
+            <aside
+                className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
+                    isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 shadow-xl`}>
                 <div className="p-6">
                     <h2 className="text-white text-2xl font-bold mb-8 flex items-center">
                         <FileText className="h-6 w-6 mr-2"/>
@@ -186,19 +481,19 @@ const ChatPage = () => {
                                 </button>
                                 <div>
                                     <h2 className="font-semibold text-gray-900">
-                                        {selectedChat.entrepreneur.name}
+                                        {getEntrepreneurName(selectedChat)}
                                     </h2>
                                     <p className="text-sm text-gray-600">
-                                        {selectedChat.project.name}
+                                        {getProjectName(selectedChat)}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Messages */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                                {messages.map((message) => (
+                                {messages.map((message, index) => (
                                     <ChatMessage
-                                        key={message.id}
+                                        key={`${message.id}-${index}`} // Use index as part of the key
                                         message={message}
                                         formatDate={formatDate}
                                     />
@@ -259,89 +554,6 @@ const ChatPage = () => {
             )}
         </div>
     );
-};
-
-// Mock data
-const MOCK_CONVERSATIONS = [
-    {
-        id: 1,
-        entrepreneur: {
-            name: "Marie Durant",
-            avatar: "/api/placeholder/40/40",
-            unreadCount: 2
-        },
-        project: { name: "Eco-Friendly Packaging" },
-        last_message: "Je vous envoie les derniers prototypes demain matin.",
-        last_message_date: "2025-02-14T10:30:00",
-        online: true
-    },
-    {
-        id: 2,
-        entrepreneur: {
-            name: "Thomas Bernard",
-            avatar: "/api/placeholder/40/40",
-            unreadCount: 0
-        },
-        project: { name: "Solar Energy Solutions" },
-        last_message: "Merci pour vos conseils sur le business plan.",
-        last_message_date: "2025-02-14T09:15:00",
-        online: false
-    },
-    {
-        id: 3,
-        entrepreneur: {
-            name: "Sophie Martin",
-            avatar: "/api/placeholder/40/40",
-            unreadCount: 3
-        },
-        project: { name: "Bio Food Market" },
-        last_message: "Pouvons-nous organiser une réunion la semaine prochaine?",
-        last_message_date: "2025-02-13T16:45:00",
-        online: true
-    }
-];
-
-const MOCK_MESSAGES = {
-    1: [
-        {
-            id: 1,
-            content: "Bonjour, j'ai terminé les nouveaux designs d'emballage.",
-            timestamp: "2025-02-14T10:15:00",
-            is_sender: false
-        },
-        {
-            id: 2,
-            content: "Excellent! J'ai hâte de les voir.",
-            timestamp: "2025-02-14T10:20:00",
-            is_sender: true
-        },
-        {
-            id: 3,
-            content: "Je vous envoie les derniers prototypes demain matin.",
-            timestamp: "2025-02-14T10:30:00",
-            is_sender: false
-        }
-    ],
-    2: [
-        {
-            id: 1,
-            content: "J'ai quelques questions sur le financement du projet.",
-            timestamp: "2025-02-14T09:00:00",
-            is_sender: false
-        },
-        {
-            id: 2,
-            content: "Je peux vous aider avec ça. Quelles sont vos questions?",
-            timestamp: "2025-02-14T09:10:00",
-            is_sender: true
-        },
-        {
-            id: 3,
-            content: "Merci pour vos conseils sur le business plan.",
-            timestamp: "2025-02-14T09:15:00",
-            is_sender: false
-        }
-    ]
 };
 
 export default ChatPage;

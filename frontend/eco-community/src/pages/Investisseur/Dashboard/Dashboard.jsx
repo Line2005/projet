@@ -103,8 +103,86 @@ const ProjectRequestsInvestorPage = () => {
         return new Date(dateString).toLocaleDateString('fr-FR');
     };
 
-    const handleStartDiscussion = (requestId) => {
-        console.log(`Starting discussion for request ${requestId}`);
+    const handleStartDiscussion = async (request) => {
+        try {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                navigate('/login');
+                return;
+            }
+
+            // First check for existing conversation
+            const response = await api.get(`/conversations/`, {
+                params: { help_request: request.id },
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            let conversation;
+
+            if (response.data && response.data.length > 0) {
+                conversation = response.data[0];
+            } else {
+                // Create new conversation
+                const createResponse = await api.post('/conversations/',
+                    { help_request: request.id },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                conversation = createResponse.data;
+            }
+
+            // Get entrepreneur details from the help request
+            const entrepreneurName = request.entrepreneur?.user
+                ? `${request.entrepreneur.user.first_name || ''} ${request.entrepreneur.user.last_name || ''}`.trim()
+                : request.entrepreneur?.first_name
+                    ? `${request.entrepreneur.first_name} ${request.entrepreneur.last_name || ''}`.trim()
+                    : 'Unknown Entrepreneur';
+
+            const entrepreneurAvatar = request.entrepreneur?.user?.profile_image || '/default-avatar.png';
+
+            navigate('/investors/messages', {
+                state: {
+                    selectedConversation: {
+                        ...conversation,
+                        entrepreneur: {
+                            name: entrepreneurName,
+                            avatar: entrepreneurAvatar,
+                        },
+                        project: {
+                            name: request.project?.name || 'Unnamed Project'
+                        },
+                        help_request: request
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error starting discussion:', {
+                error,
+                response: error.response,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+
+            if (error.response?.status === 401) {
+                navigate('/login');
+                return;
+            }
+
+            if (error.response?.status === 403) {
+                alert('You must be an investor to start a conversation.');
+                return;
+            }
+
+            alert('Unable to start discussion. Please try again later.');
+        }
     };
 
     return (
@@ -312,19 +390,20 @@ const ProjectRequestsInvestorPage = () => {
 
                                             <div className="flex flex-col space-y-2">
                                                 {request.status === 'pending' && (
-                                                <button
-                                                    className="w-full flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
-                                                    onClick={() => handleProposeHelp(request)}
-                                                >
-                                                    <Wrench className="h-4 w-4 mr-2" />
-                                                    Proposer mon aide
-                                                </button>
+                                                    <button
+                                                        className="w-full flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
+                                                        onClick={() => handleProposeHelp(request)}
+                                                    >
+                                                        <Wrench className="h-4 w-4 mr-2"/>
+                                                        Proposer mon aide
+                                                    </button>
                                                 )}
 
                                                 <button
                                                     className="w-full flex items-center justify-center px-4 py-2 border-2 border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all"
+                                                    onClick={() => handleStartDiscussion(request)}
                                                 >
-                                                    <MessageCircle className="h-4 w-4 mr-2" />
+                                                    <MessageCircle className="h-4 w-4 mr-2"/>
                                                     Discuter du projet
                                                 </button>
                                                 <button
@@ -333,7 +412,7 @@ const ProjectRequestsInvestorPage = () => {
                                                         setSelectedRequest(request);
                                                     }}
                                                 >
-                                                    <Eye className="h-4 w-4 mr-2" />
+                                                    <Eye className="h-4 w-4 mr-2"/>
                                                     Voir les détails
                                                 </button>
                                             </div>

@@ -8,7 +8,8 @@ from rest_framework import serializers
 from django.conf import settings
 from rest_framework import serializers
 from .models import User, Entrepreneur, Organization, Investor, Project, ProjectDocument, TechnicalRequest, HelpRequest, \
-    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, Announcement, Event
+    FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, Announcement, Event, Conversation, \
+    Message
 
 
 class EntrepreneurSerializer(serializers.ModelSerializer):
@@ -773,3 +774,75 @@ class EventSerializer(serializers.ModelSerializer):
             })
 
         return data
+
+#Messages
+class MessageSerializer(serializers.ModelSerializer):
+    is_sender = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Message
+        fields = ['id', 'content', 'timestamp', 'is_sender', 'is_read']
+
+    def get_is_sender(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            return obj.sender == request.user
+        return False
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    last_message = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
+    help_request = serializers.SerializerMethodField()
+    investor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = ['id', 'help_request', 'investor', 'last_message', 'unread_count', 'created_at', 'updated_at']
+
+    def get_help_request(self, obj):
+        return {
+            'id': obj.help_request.id,
+            'entrepreneur': {
+                'id': obj.help_request.entrepreneur.id,
+                'first_name': obj.help_request.entrepreneur.first_name,
+                'last_name': obj.help_request.entrepreneur.last_name,
+                'user': {
+                    'id': obj.help_request.entrepreneur.user.id,
+                    'first_name': obj.help_request.entrepreneur.user.first_name,
+                    'last_name': obj.help_request.entrepreneur.user.last_name,
+                    'profile_image': obj.help_request.entrepreneur.user.profile_image.url if obj.help_request.entrepreneur.user.profile_image else None
+                }
+            },
+            'project': {
+                'id': obj.help_request.project.id,
+                'name': obj.help_request.project.project_name,  # This stays the same
+                'project_name': obj.help_request.project.project_name,  # Add this line
+                'sector': obj.help_request.project.sector
+            }
+        }
+
+    def get_investor(self, obj):
+        return {
+            'id': obj.investor.id,
+            'first_name': obj.investor.first_name,
+            'last_name': obj.investor.last_name,
+            'user': {
+                'id': obj.investor.user.id,
+                'first_name': obj.investor.user.first_name,
+                'last_name': obj.investor.user.last_name,
+                'profile_image': obj.investor.user.profile_image.url if obj.investor.user.profile_image else None
+            }
+        }
+
+    def get_last_message(self, obj):
+        last_message = obj.messages.last()
+        if last_message:
+            return MessageSerializer(last_message, context=self.context).data
+        return None
+
+    def get_unread_count(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            return obj.messages.filter(is_read=False).exclude(sender=request.user).count()
+        return 0

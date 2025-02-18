@@ -1,13 +1,20 @@
-import React from "react";
+import React from 'react';
 
-export const ConversationItem = ({ conversation, isSelected, onClick, formatDate }) => {
-    // Safely access nested properties with optional chaining
-    const entrepreneurDetails = conversation?.help_request?.entrepreneur_details || {};
-    const entrepreneur = conversation?.help_request?.entrepreneur || {};
-    const user = entrepreneur?.user || {};
-    const project = conversation?.help_request?.project || {};
-    const projectDetails = conversation?.help_request?.project_details || {};
-    const lastMessage = conversation?.last_message;
+export const EntrepreneurConversationItem = ({ conversation, isSelected, onClick, formatDate }) => {
+    // Defensive data extraction with fallbacks
+    const investor = conversation?.investor || {};
+    const user = investor?.user || {};
+
+    // Get investor name with multiple fallback levels
+    const getInvestorName = () => {
+        if (investor?.first_name && investor?.last_name) {
+            return `${investor.first_name} ${investor.last_name}`;
+        }
+        if (user?.first_name && user?.last_name) {
+            return `${user.first_name} ${user.last_name}`;
+        }
+        return 'Unknown Investor';
+    };
 
     // Determine the profile image URL
     let profileImageUrl = '/default-avatar.png'; // Default fallback image
@@ -15,8 +22,8 @@ export const ConversationItem = ({ conversation, isSelected, onClick, formatDate
     // Try to get the profile image from various possible paths
     if (user.profile_image) {
         profileImageUrl = user.profile_image;
-    } else if (entrepreneurDetails.profile_image) {
-        profileImageUrl = entrepreneurDetails.profile_image;
+    } else if (investor?.profile_image) {
+        profileImageUrl = investor?.profile_image;
     }
 
     // If profile image is a relative URL, make sure it has the correct base URL
@@ -26,13 +33,32 @@ export const ConversationItem = ({ conversation, isSelected, onClick, formatDate
         profileImageUrl = `${baseUrl}${profileImageUrl.startsWith('/') ? '' : '/'}${profileImageUrl}`;
     }
 
-    // Get name from the appropriate source
-    const firstName = entrepreneurDetails.first_name || entrepreneur.first_name || user.first_name || '';
-    const lastName = entrepreneurDetails.last_name || entrepreneur.last_name || user.last_name || '';
-    const fullName = `${firstName} ${lastName}`.trim() || 'Unknown User';
+    // Get profile image with fallback
+    const getProfileImage = () => {
+        return user?.profile_image || investor?.profile_image || '/default-avatar.png';
+    };
 
-    // Get project name
-    const projectName = projectDetails?.project_name || project?.name || project?.project_name || 'Untitled Project';
+    // Get project name with fallback
+    const getProjectName = () => {
+        const project = conversation?.help_request?.project;
+        return project?.project_name || project?.name || 'Unknown Project';
+    };
+
+    // Get last message or timestamp
+    const getLastMessageInfo = () => {
+        if (conversation?.last_message) {
+            return {
+                content: conversation.last_message.content,
+                timestamp: formatDate(conversation.last_message.timestamp)
+            };
+        }
+        return {
+            content: 'New conversation',
+            timestamp: formatDate(conversation.created_at)
+        };
+    };
+
+    const messageInfo = getLastMessageInfo();
 
     return (
         <div
@@ -45,11 +71,9 @@ export const ConversationItem = ({ conversation, isSelected, onClick, formatDate
                 <div className="relative">
                     <img
                         src={profileImageUrl}
-                        alt={fullName}
+                        alt={getInvestorName()}
                         className="w-10 h-10 rounded-full object-cover shadow-sm"
                         onError={(e) => {
-                            // Fallback to default image if loading fails
-                            e.target.onerror = null;
                             e.target.src = '/default-avatar.png';
                         }}
                     />
@@ -58,15 +82,15 @@ export const ConversationItem = ({ conversation, isSelected, onClick, formatDate
                     <div className="flex items-start justify-between">
                         <div className="min-w-0">
                             <h3 className="font-semibold text-gray-900 truncate">
-                                {fullName}
+                                {getInvestorName()}
                             </h3>
                             <p className="text-sm text-gray-600 truncate">
-                                {projectName}
+                                {getProjectName()}
                             </p>
                         </div>
                         <div className="flex flex-col items-end ml-2">
                             <span className="text-xs text-gray-500 whitespace-nowrap">
-                                {lastMessage ? formatDate(lastMessage.timestamp) : formatDate(conversation.created_at)}
+                                {messageInfo.timestamp}
                             </span>
                             {conversation.unread_count > 0 && (
                                 <span className="bg-emerald-500 text-white text-xs rounded-full px-2 py-1 mt-1">
@@ -76,7 +100,7 @@ export const ConversationItem = ({ conversation, isSelected, onClick, formatDate
                         </div>
                     </div>
                     <p className="text-sm text-gray-600 mt-1 truncate">
-                        {lastMessage ? lastMessage.content : 'Nouvelle conversation'}
+                        {messageInfo.content}
                     </p>
                 </div>
             </div>
