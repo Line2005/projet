@@ -4,7 +4,7 @@ import { logoutUser } from "../../../Services/auth.js";
 import {
     Search,
     Plus,
-    FileText,
+    ClipboardList,
     Calendar,
     Users,
     Edit,
@@ -182,6 +182,11 @@ const NGOAnnouncementsPage = () => {
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Calendar className="h-5 w-5"/>
                             <span>Événements</span>
+                        </a>
+                        <a href="/association/registrations"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                            <ClipboardList className="h-5 w-5"/>
+                            <span>Inscriptions</span>
                         </a>
                         <a href="/association/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">

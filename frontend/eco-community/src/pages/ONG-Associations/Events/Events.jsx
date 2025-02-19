@@ -10,7 +10,7 @@ import {
     Users,
     Bell,
     Filter,
-    Edit,
+    ClipboardList,
     Trash2,
     Eye,
     Clock,
@@ -130,6 +130,10 @@ const NGOEventsPage = () => {
         setEditingEvent(event); // Pass the entire announcement object, not just the ID
     };
 
+    const handleManageRegistrations = (eventId) => {
+        navigate(`/association/registrations/${eventId}`);
+    };
+
 
     const getStatusBadge = (status) => {
         const statusStyles = {
@@ -197,6 +201,11 @@ const NGOEventsPage = () => {
                             <Calendar className="h-5 w-5"/>
                             <span>Événements</span>
                         </a>
+                        <a href="/association/registrations"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                            <ClipboardList className="h-5 w-5"/>
+                            <span>Inscriptions</span>
+                        </a>
                         <a href="/association/settings"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
                             <Settings className="h-5 w-5"/>
@@ -211,7 +220,7 @@ const NGOEventsPage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>
@@ -368,6 +377,7 @@ const NGOEventsPage = () => {
 
                                                 <div className="flex gap-2">
                                                     <button
+                                                        onClick={() => handleManageRegistrations(event.id)}
                                                         className="flex-1 bg-emerald-600 text-white py-2.5 px-4 rounded-lg hover:bg-emerald-700">
                                                         Gérer les inscriptions
                                                     </button>

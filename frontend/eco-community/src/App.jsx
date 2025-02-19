@@ -32,6 +32,9 @@ import ParameterPage from "./pages/Investisseur/settings/Parameter.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import ChatPage from "./pages/Investisseur/Chat/ChatPage.jsx";
 import EntrepreneurChatPage from "./pages/entreprneur/Chat/MessagePage.jsx";
+import EventRegistrationsPage from "./pages/ONG-Associations/Registration/RegistrationManagements.jsx";
+import MyRegistrations from "./pages/Investisseur/RegistrationInfo/RegistrationInfo.jsx";
+import Registrations from "./pages/entreprneur/RegistrationInfo/Info.jsx";
 
 
 // Protected Route Component
@@ -67,6 +70,7 @@ function App() {
                 <Route path="/entrepreneur/demandes" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <HelpRequestsListPage /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/help" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <HelpPage /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/opportunity" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <OpportunityPage /> </ProtectedRoute>} />
+                <Route path="/entrepreneur/registration-info" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <Registrations /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/collaborators" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <CollaboratorPage /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/messages" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <EntrepreneurChatPage /> </ProtectedRoute>} />
                 <Route path="/entrepreneur/settings" element={ <ProtectedRoute allowedRoles={['entrepreneur']}> <SettingsPage /> </ProtectedRoute>} />
@@ -78,6 +82,7 @@ function App() {
                 <Route path="/investors/technicalHelp" element={ <ProtectedRoute allowedRoles={['investor']}> <TechnicalHelpProposalPage /> </ProtectedRoute>} />
                 <Route path="/investors/proposals" element={ <ProtectedRoute allowedRoles={['investor']}> <HelpProposalsPage /> </ProtectedRoute>} />
                 <Route path="/investors/opportunity" element={ <ProtectedRoute allowedRoles={['investor']}> <AnnouncePage /> </ProtectedRoute>} />
+                <Route path="/investors/registration-info" element={ <ProtectedRoute allowedRoles={['investor']}><MyRegistrations /> </ProtectedRoute>} />
                 <Route path="/investors/collaborators" element={ <ProtectedRoute allowedRoles={['investor']}><InvestorCollaboratorsPage /> </ProtectedRoute>} />
                 <Route path="/investors/messages" element={ <ProtectedRoute allowedRoles={['investor']}><ChatPage /> </ProtectedRoute>} />
                 <Route path="/investors/settings" element={ <ProtectedRoute allowedRoles={['investor']}><ParameterPage /> </ProtectedRoute>} />
@@ -90,6 +95,7 @@ function App() {
                 <Route path="/association/events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <NGOEventsPage /> </ProtectedRoute>} />
                 <Route path="/association/create-events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <CreateEventPage /> </ProtectedRoute>} />
                 <Route path="/association/editing-events" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <EditEventPage /> </ProtectedRoute>} />
+                <Route path="/association/registrations/:eventId" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <EventRegistrationsPage /> </ProtectedRoute>} />
                 <Route path="/association/settings" element={ <ProtectedRoute allowedRoles={['ONG-Association']}> <ParamPage /> </ProtectedRoute>} />
 
                 // Admin Parts

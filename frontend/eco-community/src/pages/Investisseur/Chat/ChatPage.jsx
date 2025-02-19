@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
     FileText, HelpCircle, Info, Users, Settings, LogOut,
-    Menu, X, Search, MessageSquare, Send, ChevronLeft, Bell
+    Menu, X, Search, MessageSquare, Send, ChevronLeft, Bell, ClipboardCheck
 } from 'lucide-react';
 import { logoutUser } from "../../../Services/auth.js";
 import {NotificationDropdown} from "./components/NotificationDropdown.jsx";
@@ -421,6 +421,7 @@ const ChatPage = () => {
                         <SidebarLink href="/investors/messages" icon={MessageSquare} isActive>Messages</SidebarLink>
                         <SidebarLink href="/investors/proposals" icon={HelpCircle}>Proposition d'aide</SidebarLink>
                         <SidebarLink href="/investors/opportunity" icon={Info}>Annonces</SidebarLink>
+                        <SidebarLink href="/investors/registration-info" icon={ClipboardCheck}>Info Inscription</SidebarLink>
                         <SidebarLink href="/investors/collaborators" icon={Users}>Collaborateurs</SidebarLink>
                         <SidebarLink href="/investors/settings" icon={Settings}>Paramètres</SidebarLink>
                     </nav>

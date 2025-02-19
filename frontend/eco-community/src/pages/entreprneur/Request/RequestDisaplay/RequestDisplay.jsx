@@ -18,7 +18,7 @@ import {
     Eye,
     Wrench,
     HelpingHand,
-    Trash, HandHelping, MessageSquare
+    Trash, HandHelping, MessageSquare, ClipboardCheck
 } from 'lucide-react';
 import HelpRequestDetails from "../details/RequestModal.jsx";
 import api from "../../../../Services/api.js";
@@ -231,6 +231,11 @@ const HelpRequestsListPage = () => {
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                             <Info className="h-5 w-5"/>
                             <span>Annonces</span>
+                        </a>
+                        <a href="/entrepreneur/registration-info"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                            <ClipboardCheck className="h-5 w-5"/>
+                            <span>Info Inscription</span>
                         </a>
                         <a href="/entrepreneur/collaborators"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">

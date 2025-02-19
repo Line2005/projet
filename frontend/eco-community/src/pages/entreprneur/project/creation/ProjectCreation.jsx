@@ -39,15 +39,15 @@ const ProjectCreationForm = () => {
     });
 
     const sectors = [
-        'Agriculture',
-        'Technologie',
-        'Artisanat',
-        'Commerce',
-        'Éducation',
-        'Santé',
-        'Tourisme',
-        'Industrie',
-        'Services'
+        { display: 'Agriculture', value: 'agriculture' },
+        { display: 'Technologie', value: 'technology' },
+        { display: 'Artisanat', value: 'crafts' },
+        { display: 'Commerce', value: 'commerce' },
+        { display: 'Éducation', value: 'education' },
+        { display: 'Santé', value: 'healthcare' },
+        { display: 'Tourisme', value: 'tourism' },
+        { display: 'Industrie', value: 'manufacturing' },
+        { display: 'Services', value: 'services' }
     ];
 
     // Add data validation helper
@@ -70,11 +70,16 @@ const ProjectCreationForm = () => {
         const { name, value } = e.target;
 
         if (name === 'estimated_budget') {
-            // Only allow numbers and decimal point
             const numericValue = value.replace(/[^\d.-]/g, '');
             setFormData(prev => ({
                 ...prev,
                 [name]: numericValue
+            }));
+        } else if (name === 'sector') {
+            // When sector is selected, store the lowercase value
+            setFormData(prev => ({
+                ...prev,
+                [name]: value.toLowerCase()
             }));
         } else {
             setFormData(prev => ({
@@ -393,8 +398,8 @@ const ProjectCreationForm = () => {
                                         >
                                             <option value="">Sélectionnez un secteur</option>
                                             {sectors.map((sector) => (
-                                                <option key={sector} value={sector}>
-                                                    {sector}
+                                                <option key={sector.value} value={sector.value}>
+                                                    {sector.display}
                                                 </option>
                                             ))}
                                         </select>

@@ -1,5 +1,6 @@
 import decimal
 import json
+from datetime import timezone
 
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
@@ -9,7 +10,7 @@ from django.conf import settings
 from rest_framework import serializers
 from .models import User, Entrepreneur, Organization, Investor, Project, ProjectDocument, TechnicalRequest, HelpRequest, \
     FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, Announcement, Event, Conversation, \
-    Message
+    Message, EventRegistration
 
 
 class EntrepreneurSerializer(serializers.ModelSerializer):
@@ -788,6 +789,119 @@ class MessageSerializer(serializers.ModelSerializer):
         if request and hasattr(request, 'user'):
             return obj.sender == request.user
         return False
+
+
+#Events registration
+class EventRegistrationSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    user_email = serializers.SerializerMethodField()
+    user_phone = serializers.SerializerMethodField()
+    user_type = serializers.SerializerMethodField()
+    event_details = serializers.SerializerMethodField()  # Add this field
+
+    class Meta:
+        model = EventRegistration
+        fields = [
+            'id',
+            'event',
+            'user',
+            'status',
+            'registration_date',
+            'message',
+            'user_name',
+            'user_email',
+            'user_phone',
+            'user_type',
+            'event_details'  # Add this to fields
+        ]
+        read_only_fields = ['id', 'user', 'registration_date']
+
+    def get_user_name(self, obj):
+        if obj.user.role == 'entrepreneur':
+            return f"{obj.user.entrepreneur.first_name} {obj.user.entrepreneur.last_name}"
+        elif obj.user.role == 'investor':
+            return f"{obj.user.investor.first_name} {obj.user.investor.last_name}"
+        elif obj.user.role == 'ONG-Association':
+            return obj.user.organization.organization_name
+        return obj.user.username
+
+    def get_user_email(self, obj):
+        return obj.user.email
+
+    def get_user_phone(self, obj):
+        return obj.user.phone
+
+    def get_user_type(self, obj):
+        return obj.user.role
+
+    def get_event_details(self, obj):
+        """Add detailed event information"""
+        return {
+            'id': obj.event.id,
+            'title': obj.event.title,
+            'description': obj.event.description,
+            'date': obj.event.date,
+            'time': obj.event.time,
+            'location': obj.event.location,
+            'type': obj.event.type,
+            'capacity': obj.event.capacity,
+            'registration_deadline': obj.event.registration_deadline,
+            'organization_name': obj.event.organization.organization_name
+        }
+
+class EventRegistrationCreateSerializer(serializers.ModelSerializer):
+    event = serializers.PrimaryKeyRelatedField(queryset=Event.objects.all())
+
+    class Meta:
+        model = EventRegistration
+        fields = ['event', 'message']
+
+    def validate_event(self, value):
+        # Check if event exists and is still open for registration
+        if not value:
+            raise serializers.ValidationError("Event is required")
+
+        # Check if event has space
+        approved_count = EventRegistration.objects.filter(
+            event=value,
+            status='approved'
+        ).count()
+
+        if approved_count >= value.capacity:
+            # If full, automatically set to waitlist
+            self.context['waitlist'] = True
+
+        return value.id  # Return the ID instead of the Event object
+
+    def create(self, validated_data):
+        # Get the current user from the context
+        user = self.context['request'].user
+
+        # Ensure we're working with the event ID
+        event_id = validated_data['event']
+        event = Event.objects.get(id=event_id)
+
+        # Check if user already registered
+        existing_registration = EventRegistration.objects.filter(
+            event=event,
+            user=user
+        ).first()
+
+        if existing_registration:
+            raise serializers.ValidationError(
+                "Vous vous êtes déjà inscrit(e) à cet événement"
+            )
+
+        # Create the registration
+        registration = EventRegistration(
+            user=user,
+            event=event,  # Use the Event object here
+            status='waitlist' if self.context.get('waitlist') else 'pending',
+            message=validated_data.get('message', '')
+        )
+        registration.save()
+
+        return registration
 
 
 class ConversationSerializer(serializers.ModelSerializer):

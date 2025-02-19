@@ -374,6 +374,25 @@ class Collaboration(models.Model):
         unique_together = ['entrepreneur', 'investor', 'project', 'contract']
 
 
+class EventRegistration(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('waitlist', 'Waitlist'),
+    ]
+
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='registrations')
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='event_registrations')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    registration_date = models.DateTimeField(auto_now_add=True)
+    message = models.TextField(blank=True, null=True)
+    attendance_confirmed = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'event_registrations'
+        unique_together = ['event', 'user']
+
 #Anouncement creation
 class Announcement(models.Model):
     ANNOUNCEMENT_TYPES = [

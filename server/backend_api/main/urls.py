@@ -9,7 +9,8 @@ from .views import RegisterView, LoginView, LogoutView, UserManagementView, User
     HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
     ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView, PublicAnnouncementView, PublicEventView, \
     AdminAnalyticsAPIView, UserView, VerifyResetCodeView, RequestPasswordResetView, ResetPasswordView, \
-    ConversationListAPIView, ConversationDetailAPIView, ConversationMessagesAPIView
+    ConversationListAPIView, ConversationDetailAPIView, ConversationMessagesAPIView, EventRegistrationView, \
+    EventRegistrationManagementView, EventReminderView, UserEventRegistrationsView
 
 router = DefaultRouter()
 
@@ -73,7 +74,20 @@ urlpatterns = [
     path('events/', EventManagementView.as_view(), name='event-create'),
     path('events/<int:event_id>/', EventManagementView.as_view(), name='event-detail'),
 
-    # Public announcement endpoints
+    # User registration endpoints
+    path('event-registrations/', EventRegistrationView.as_view(), name='event-registrations'),
+
+    # Organization management endpoints
+    path('events/<int:event_id>/registrations/', EventRegistrationManagementView.as_view(), name='event-registrations-management'),
+    path('events/<int:event_id>/registrations/<int:registration_id>/', EventRegistrationManagementView.as_view(), name='event-registration-detail'),
+    path('events/<int:event_id>/send-reminders/', EventReminderView.as_view(), name='event-send-reminders'),
+
+    path('event-registrations-info/', UserEventRegistrationsView.as_view(), name='user-event-registrations'),
+
+    # Get specific registration endpoint for both users and organizations
+    path('event-registrations/<int:registration_id>/', EventRegistrationView.as_view(), name='event-registration-detail'),
+
+                  # Public announcement endpoints
     path('public/announcements/', PublicAnnouncementView.as_view(), name='public-announcements'),
     path('public/announcements/<int:pk>/', PublicAnnouncementView.as_view(), name='public-announcement-detail'),
 

@@ -18,7 +18,7 @@ import {
     Info,
     Bell,
     Tag,
-    AlertCircle, MessageSquare
+    AlertCircle, MessageSquare, ClipboardCheck
 } from 'lucide-react';
 import api from "../../../Services/api.js";
 import OpportunityDetailModal from "../../opportunityDetails/OpportunityDetails.jsx";
@@ -33,6 +33,8 @@ const AnnouncePage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOpportunity, setSelectedOpportunity] = useState(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [registrationStatus, setRegistrationStatus] = useState({});
+    const [isRegistering, setIsRegistering] = useState(false);
 
     const categories = [
         { id: 'all', label: 'Tout' },
@@ -125,6 +127,69 @@ const AnnouncePage = () => {
         }
     };
 
+    const handleRegistration = async (item) => {
+        if (isRegistering) return;
+
+        setIsRegistering(true);
+        try {
+            // Debug logging to see what we're receiving
+            console.log('Item received:', item);
+            console.log('Item ID type:', typeof item.id);
+            console.log('Item ID value:', item.id);
+
+            // Ensure we have a numeric ID
+            const eventId = parseInt(item.id);
+
+            if (isNaN(eventId)) {
+                throw new Error('Invalid event ID');
+            }
+
+            console.log('Parsed event ID:', eventId);
+
+            const response = await api.post('/event-registrations/', {
+                event: eventId,  // Send the parsed numeric ID
+                message: "Interested in attending this event"
+            });
+
+            // Update registration status for this event
+            setRegistrationStatus(prev => ({
+                ...prev,
+                [eventId]: response.data.status
+            }));
+
+            const statusMessages = {
+                'pending': 'Registration submitted! Awaiting approval.',
+                'waitlist': 'Added to waitlist - the event is currently full.',
+                'approved': 'Registration approved!'
+            };
+
+            alert(statusMessages[response.data.status] || 'Registration successful!');
+
+        } catch (error) {
+            console.error('Registration failed:', error);
+            console.error('Error details:', {
+                response: error.response,
+                data: error.response?.data,
+                message: error.message
+            });
+
+            let errorMessage = 'Failed to register for the event.';
+
+            if (error.response?.data?.detail) {
+                errorMessage = error.response.data.detail;
+            } else if (error.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error.response?.data) {
+                errorMessage = Object.values(error.response.data)[0];
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            alert(errorMessage);
+        } finally {
+            setIsRegistering(false);
+        }
+    };
 
     const getTypeColor = (type, category) => {
         const colors = {
@@ -226,12 +291,26 @@ const AnnouncePage = () => {
                 </div>
 
                 <div className="flex space-x-3">
-                    <button
-                        onClick={() => console.log(`Applying for opportunity ${item.id}`)}
-                        className="flex-1 bg-emerald-600 text-white py-2.5 rounded-lg hover:bg-emerald-700 transition-all duration-200"
-                    >
-                        {item.category === 'events' ? "S'inscrire" : 'Postuler'}
-                    </button>
+                    {item.category === 'events' && (
+                        <button
+                            onClick={() => {
+                                console.log('Registration clicked for item:', item); // Debug log
+                                handleRegistration(item);
+                            }}
+                            disabled={isRegistering || registrationStatus[item.id]}
+                            className={`flex-1 ${
+                                registrationStatus[item.id]
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-emerald-600 hover:bg-emerald-700'
+                            } text-white py-2.5 rounded-lg transition-all duration-200`}
+                        >
+                            {registrationStatus[item.id]
+                                ? `Statut: ${registrationStatus[item.id]}`
+                                : isRegistering
+                                    ? "En cours..."
+                                    : "S'inscrire"}
+                        </button>
+                    )}
                     <button
                         onClick={() => {
                             setSelectedOpportunity(item);
@@ -273,12 +352,12 @@ const AnnouncePage = () => {
                         <span>Projets</span>
                     </a>
                     <a href="/investors/messages"
-                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                         <MessageSquare className="h-5 w-5"/>
                         <span>Messages</span>
                     </a>
                     <a href="/investors/proposals"
-                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                         <HelpCircle className="h-5 w-5"/>
                         <span>Proposition d'aide</span>
                     </a>
@@ -286,6 +365,11 @@ const AnnouncePage = () => {
                        className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg shadow-md">
                         <Info className="h-5 w-5"/>
                         <span>Annonces</span>
+                    </a>
+                    <a href="/investors/registration-info"
+                       className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                        <ClipboardCheck className="h-5 w-5"/>
+                        <span>Info Inscription</span>
                     </a>
                     <a href="/investors/collaborators"
                        className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
@@ -306,7 +390,7 @@ const AnnouncePage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>
@@ -414,7 +498,8 @@ const AnnouncePage = () => {
                                 <div className="text-center py-12">
                                     <div className="bg-white rounded-xl shadow-md p-8 max-w-md mx-auto">
                                         <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4"/>
-                                        <h3 className="text-xl font-bold text-gray-900 mb-2">Aucune opportunité disponible</h3>
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">Aucune opportunité
+                                            disponible</h3>
                                         <p className="text-gray-600 mb-6">
                                             {error
                                                 ? "Une erreur s'est produite lors du chargement des opportunités"

@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { logoutUser } from "../../../Services/auth.js";
 import {Settings, LogOut, Menu, X, Lock, User, Shield, Bell, Calendar } from 'lucide-react';
 import api from "../../../Services/api.js";
@@ -285,7 +285,7 @@ const ParamPage = () => {
                         className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
                     >
                         <LogOut className="h-5 w-5"/>
-                        {isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}
+                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>

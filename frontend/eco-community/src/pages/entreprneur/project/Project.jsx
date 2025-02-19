@@ -19,11 +19,12 @@ import {
     Info,
     HandHelping,
     Trash2,
-    MessageSquare
+    MessageSquare, ClipboardCheck
 } from 'lucide-react';
 
 import api from "../../../Services/api.js";
 import {ProjectDetailsCard} from "./detail/ProjectModal.jsx";
+import SectorDisplay from "./Sector.jsx";
 
 
 const ProjectsPage = () => {
@@ -186,6 +187,11 @@ const ProjectsPage = () => {
                             <Info className="h-5 w-5"/>
                             <span>Annonces</span>
                         </a>
+                        <a href="/entrepreneur/registration-info"
+                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
+                            <ClipboardCheck className="h-5 w-5"/>
+                            <span>Info Inscription</span>
+                        </a>
                         <a href="/entrepreneur/collaborators"
                            className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg transition-all duration-200">
                             <Users className="h-5 w-5"/>
@@ -269,10 +275,7 @@ const ProjectsPage = () => {
                                 </div>
                                 <div className="p-6">
                                     <div className="mb-4">
-                                        <span
-                                            className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-                                            {project.sector}
-                                        </span>
+                                        <SectorDisplay sector={project.sector} />
                                     </div>
                                     <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-emerald-600 transition-colors">
                                         {project.project_name}

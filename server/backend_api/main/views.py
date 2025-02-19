@@ -11,6 +11,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
 from django.db.models.functions import TruncMonth
 from django.http import FileResponse
 from django.shortcuts import render
@@ -45,7 +46,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from .models import Organization, Entrepreneur, Investor, ProjectDocument, Project, HelpRequest, TechnicalRequest, \
     FinancialRequest, FinancialProposal, TechnicalProposal, Collaboration, Contract, User, Announcement, Event, \
-    Conversation
+    Conversation, EventRegistration
 from .permission import IsProposalOwnerOrRequestEntrepreneur
 from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpdateSerializer, UserListSerializer, \
     UserCreateSerializer, InvestorSerializer, ProjectSerializer, FinancialRequestSerializer, TechnicalRequestSerializer, \
@@ -54,7 +55,7 @@ from .serializers import OrganizationSerializer, EntrepreneurSerializer, UserUpd
     OrganizationDetailSerializer, UserDetailSerializer, OrganizationUpdateSerializer, PasswordUpdateSerializer, \
     EntrepreneurProfileSerializer, InvestorProfileSerializer, OrganizationProfileSerializer, \
     PasswordResetConfirmSerializer, VerifyResetCodeSerializer, PasswordResetRequestSerializer, MessageSerializer, \
-    ConversationSerializer
+    ConversationSerializer, EventRegistrationSerializer, EventRegistrationCreateSerializer
 
 CustomUser = get_user_model()
 
@@ -1876,6 +1877,308 @@ class PublicAnnouncementView(APIView):
         except Exception as e:
             return Response(
                 {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+#Events registration
+class EventRegistrationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        """Register current user to an event"""
+        try:
+            serializer = EventRegistrationCreateSerializer(
+                data=request.data,
+                context={'request': request}
+            )
+
+            if serializer.is_valid():
+                # Add additional validation
+                event_id = serializer.validated_data.get('event')
+                if not event_id:
+                    return Response(
+                        {"error": "Event ID is required"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                # Check if event exists
+                try:
+                    event = Event.objects.get(id=event_id)
+                except Event.DoesNotExist:
+                    return Response(
+                        {"error": "Event not found"},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+
+                # Check if user is already registered
+                if EventRegistration.objects.filter(
+                    event=event,
+                    user=request.user
+                ).exists():
+                    return Response(
+                        {"error": "You are already registered for this event"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                registration = serializer.save()
+                return Response(
+                    EventRegistrationSerializer(registration).data,
+                    status=status.HTTP_201_CREATED
+                )
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            # Log the error for debugging
+            print(f"Registration error: {str(e)}")
+            return Response(
+                {"error": "An unexpected error occurred"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class EventRegistrationManagementView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_event_with_permission_check(self, event_id, user):
+        """Get event and verify the user is the organization owner"""
+        if user.role != 'ONG-Association':
+            raise PermissionError("Only organizations can manage event registrations")
+
+        event = get_object_or_404(Event, id=event_id)
+
+        # Verify the organization is the event owner
+        if event.organization.user != user:
+            raise PermissionError("You can only manage registrations for your own events")
+
+        return event
+
+    def get(self, request, event_id, registration_id=None):
+        """Get registrations for a specific event"""
+        try:
+            event = self.get_event_with_permission_check(event_id, request.user)
+
+            if registration_id:
+                # Get specific registration
+                registration = get_object_or_404(EventRegistration, id=registration_id, event=event)
+                serializer = EventRegistrationSerializer(registration)
+                return Response(serializer.data)
+            else:
+                # Get all registrations for this event
+                registrations = EventRegistration.objects.filter(event=event)
+                serializer = EventRegistrationSerializer(registrations, many=True)
+                return Response(serializer.data)
+
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    def patch(self, request, event_id, registration_id):
+        """Update registration status"""
+        try:
+            event = self.get_event_with_permission_check(event_id, request.user)
+            registration = get_object_or_404(EventRegistration, id=registration_id, event=event)
+
+            # Only allow updating status
+            if 'status' not in request.data:
+                return Response(
+                    {"error": "Only status field can be updated"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            serializer = EventRegistrationSerializer(
+                registration,
+                data={'status': request.data['status']},
+                partial=True
+            )
+
+            if serializer.is_valid():
+                updated_registration = serializer.save()
+
+                # If status changed to approved or rejected, send email notification
+                if updated_registration.status in ['approved', 'rejected']:
+                    self.send_status_notification(updated_registration)
+
+                # If approving and there are waitlisted registrations, check capacity
+                if updated_registration.status == 'approved':
+                    self.check_waitlist(event)
+
+                return Response(EventRegistrationSerializer(updated_registration).data)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except PermissionError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+    def check_waitlist(self, event):
+        """Check if there's space to move someone from waitlist to approved"""
+        # Count current approved registrations
+        approved_count = EventRegistration.objects.filter(
+            event=event, status='approved'
+        ).count()
+
+        # If there's still capacity, move the oldest waitlisted registration to approved
+        if approved_count < event.capacity:
+            waitlisted = EventRegistration.objects.filter(
+                event=event, status='waitlist'
+            ).order_by('registration_date').first()
+
+            if waitlisted:
+                waitlisted.status = 'approved'
+                waitlisted.save()
+                self.send_status_notification(waitlisted)
+
+    def send_status_notification(self, registration):
+        """Send email notification about registration status change"""
+        subject = f"Your registration for {registration.event.title}"
+
+        if registration.status == 'approved':
+            message = f"""
+            Bonjour {self.get_user_name(registration.user)},
+
+            Nous avons le plaisir de vous informer que votre inscription à  {registration.event.title} a été approuvée !
+
+            Détails de l’événement :
+            Date: {registration.event.date}
+            Heure: {registration.event.time}
+            Lieu: {registration.event.location}
+
+            Nous avons hâte de vous voir à l’événement !
+
+            Cordialement,
+            {registration.event.organization.organization_name}
+            """
+        else:  # rejected
+            message = f"""
+            Bonjour {self.get_user_name(registration.user)},
+
+            Nous regrettons de vous informer que votre inscription à {registration.event.title} a été refusée.. 
+            Cela peut être dû à une capacité limitée ou à d'autres raisons.
+
+            N’hésitez pas à vous inscrire à nos prochains événements.
+
+            Cordialement,
+            {registration.event.organization.organization_name}
+            """
+
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [registration.user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Log the error but don't fail the request
+            print(f"Failed to send email notification: {str(e)}")
+
+    def get_user_name(self, user):
+        if user.role == 'entrepreneur':
+            return f"{user.entrepreneur.first_name} {user.entrepreneur.last_name}"
+        elif user.role == 'investor':
+            return f"{user.investor.first_name} {user.investor.last_name}"
+        elif user.role == 'ONG-Association':
+            return user.organization.organization_name
+        return user.username
+
+
+class EventReminderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, event_id):
+        """Send reminder emails to all approved attendees"""
+        try:
+            # Check if user is the event owner
+            if request.user.role != 'ONG-Association':
+                return Response(
+                    {"error": "Only organizations can send event reminders"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            event = get_object_or_404(Event, id=event_id)
+
+            # Verify the organization is the event owner
+            if event.organization.user != request.user:
+                return Response(
+                    {"error": "You can only send reminders for your own events"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            # Get all approved registrations
+            approved_registrations = EventRegistration.objects.filter(
+                event=event, status='approved'
+            )
+
+            # Send reminder emails
+            for registration in approved_registrations:
+                self.send_reminder_email(registration)
+
+            return Response(
+                {"message": f"Reminder emails sent to {approved_registrations.count()} attendees"},
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def send_reminder_email(self, registration):
+        """Send reminder email to an attendee"""
+        user = registration.user
+        event = registration.event
+
+        # Get user's name based on role
+        if user.role == 'entrepreneur':
+            name = f"{user.entrepreneur.first_name} {user.entrepreneur.last_name}"
+        elif user.role == 'investor':
+            name = f"{user.investor.first_name} {user.investor.last_name}"
+        else:
+            name = user.username
+
+        subject = f"Rappel : {event.title} approche à grands pas !"
+
+        message = f"""
+        Bonjour {name},
+
+        Ceci est un rappel amical que  {event.title} aura lieu le {event.date} à {event.time}.
+
+        Détails de l’événement :
+        Lieu: {event.location}
+
+        Nous avons hâte de vous y voir !
+
+        Cordialements,
+        {event.organization.organization_name}
+        """
+
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            # Log the error but continue with other emails
+            print(f"Failed to send reminder email to {user.email}: {str(e)}")
+
+#Users can see the approval of an event
+class UserEventRegistrationsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Get all event registrations for the current user"""
+        try:
+            registrations = EventRegistration.objects.filter(user=request.user)
+            serializer = EventRegistrationSerializer(registrations, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response(
+                {"error": "Failed to fetch registrations"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

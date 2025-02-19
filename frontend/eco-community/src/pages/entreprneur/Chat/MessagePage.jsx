@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {
     FileText, HelpCircle, Info, Users, Settings, LogOut,
-    Menu, X, Search, MessageSquare, Send, ChevronLeft, Bell, HandHelping
+    Menu, X, Search, MessageSquare, Send, ChevronLeft, Bell, HandHelping, ClipboardCheck
 } from 'lucide-react';
 import { logoutUser } from "../../../Services/auth.js";
 import {useLocation, useNavigate} from "react-router-dom";
@@ -414,6 +414,7 @@ const EntrepreneurChatPage = () => {
                         <SidebarLink href="/entrepreneur/demandes" icon={HelpCircle}>Demandes d'aide</SidebarLink>
                         <SidebarLink href="/entrepreneur/help" icon={HandHelping}>Proposition d'aide</SidebarLink>
                         <SidebarLink href="/entrepreneur/opportunity" icon={Info}>Opportunités</SidebarLink>
+                        <SidebarLink href="/entrepreneur/registration-info" icon={ClipboardCheck}>Info Inscription</SidebarLink>
                         <SidebarLink href="/entrepreneur/collaborators" icon={Users}>Collaborateurs</SidebarLink>
                         <SidebarLink href="/entrepreneur/settings" icon={Settings}>Paramètres</SidebarLink>
                     </nav>
