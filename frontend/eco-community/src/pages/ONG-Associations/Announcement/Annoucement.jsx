@@ -21,6 +21,7 @@ import AnnouncementImage from "./AnnouncementImage.jsx";
 import AnnouncementDetailsModal from "./AnnouncementDetails.jsx";
 import EditAnnouncementModal from "./AnnouncementEdit.jsx";
 import {Card} from "../../../components/ui/card.jsx";
+import RequirementsList from "./Components/Requirements.jsx";
 
 const NGOAnnouncementsPage = () => {
     const [announcements, setAnnouncements] = useState([]);
@@ -342,12 +343,8 @@ const NGOAnnouncementsPage = () => {
                                                 </div>
 
                                                 <div className="flex flex-wrap gap-2">
-                                                    {announcement.requirements.map((req, index) => (
-                                                        <span key={index}
-                                                              className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600">
-                                                            {req}
-                                                        </span>
-                                                    ))}
+                                                    {/* Replace the existing requirements mapping with: */}
+                                                    <RequirementsList requirements={announcement.requirements} />
                                                 </div>
                                             </div>
                                         </div>

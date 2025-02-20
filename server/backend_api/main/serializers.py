@@ -661,6 +661,18 @@ class AnnouncementSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('organization', 'created_at', 'updated_at')
 
+    def to_representation(self, instance):
+        """
+        Convert the requirements from JSON string to Python list when serializing.
+        """
+        representation = super().to_representation(instance)
+        if isinstance(representation.get('requirements'), str):
+            try:
+                representation['requirements'] = json.loads(representation['requirements'])
+            except (json.JSONDecodeError, TypeError):
+                representation['requirements'] = []
+        return representation
+
     def validate_requirements(self, value):
         """
         Validate the requirements field.
