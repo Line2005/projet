@@ -2304,6 +2304,50 @@ class AdminAnalyticsAPIView(APIView):
                 for item in sector_counts
             ]
 
+            # Get published announcements and events per month
+            announcements_by_month = Announcement.objects.filter(
+                created_at__range=(start_date, end_date),
+                status='published'
+            ).annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                announcements=Count('id')
+            ).order_by('month')
+
+            events_by_month = Event.objects.filter(
+                created_at__range=(start_date, end_date),
+                status='published'
+            ).annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                events=Count('id')
+            ).order_by('month')
+
+            # Combine announcements and events data
+            monthly_publications = defaultdict(lambda: {'announcements': 0, 'events': 0})
+
+            for item in announcements_by_month:
+                month_key = item['month'].strftime('%b %y')
+                monthly_publications[month_key]['announcements'] = item['announcements']
+
+            for item in events_by_month:
+                month_key = item['month'].strftime('%b %y')
+                monthly_publications[month_key]['events'] = item['events']
+
+            # Convert to list format for frontend
+            publications_data = [
+                {
+                    'month': month,
+                    'announcements': data['announcements'],
+                    'events': data['events'],
+                    'total': data['announcements'] + data['events']
+                }
+                for month, data in sorted(monthly_publications.items())
+            ]
+
+            # Add debug logging
+            print("Publications data before sending:", publications_data)
+
             # Format stats data
             stats_data = {
                 'overview': {
@@ -2355,6 +2399,15 @@ class AdminAnalyticsAPIView(APIView):
                 ],
                 'proposal_stats': [
                         {'month': month, **data} for month, data in sorted(merged_stats.items())
+                ],
+                'publications_data': [
+                    {
+                        'month': month,
+                        'announcements': data['announcements'],
+                        'events': data['events'],
+                        'total': data['announcements'] + data['events']
+                    }
+                    for month, data in sorted(monthly_publications.items())
                 ],
                 'sector_data': list(sector_data)
             }

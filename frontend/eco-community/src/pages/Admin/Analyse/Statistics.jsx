@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import {Card, CardContent, CardHeader, CardTitle} from "../../../components/ui/card.jsx";
 import {logoutUser} from "../../../Services/auth.js";
 import api from "../../../Services/api.js";
+import PublicationsCard from "./PublicationChart.jsx";
 
 const AdminAnalytics = () => {
     const navigate = useNavigate();
@@ -33,35 +34,32 @@ const AdminAnalytics = () => {
         monthly_stats: [],
         sector_data: [],
         proposal_stats: [],
+        publications_data: [],
     });
 
     useEffect(() => {
         fetchAnalytics()
     }, []);
 
+
     const fetchAnalytics = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/admin/analytics/'); // Use `api.get` for the API call
-            setAnalyticsData(response.data); // Update state with the fetched analytics data
-            setError(null); // Clear any previous error
+            const response = await api.get('/admin/analytics/');
+            console.log('Raw Analytics Response:', response.data);
+            console.log('Publications Data:', response.data.publications_data);
+            setAnalyticsData(response.data);
+            setError(null);
         } catch (err) {
-            setError('Failed to load analytics data'); // Set error message
-            console.error('Analytics fetch error:', err); // Log error for debugging
+            console.error('Analytics fetch error:', err);
+            setError('Failed to load analytics data');
         } finally {
-            setLoading(false); // Stop the loading state
+            setLoading(false);
         }
     };
 
-    // Sample data - replace with actual API calls
-    const monthlyStats = [
-        { month: 'Jan', projects: 45, financial: 28, technical: 17, transactions: 15000000 },
-        { month: 'Fév', projects: 52, financial: 32, technical: 20, transactions: 18000000 },
-        { month: 'Mar', projects: 48, financial: 30, technical: 18, transactions: 16500000 },
-        { month: 'Avr', projects: 70, financial: 45, technical: 25, transactions: 22000000 },
-        { month: 'Mai', projects: 65, financial: 40, technical: 25, transactions: 20000000 },
-        { month: 'Juin', projects: 85, financial: 52, technical: 33, transactions: 25000000 }
-    ];
+
+
 
     const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -178,57 +176,8 @@ const AdminAnalytics = () => {
                     </Card>
 
 
-                    {/* Financial Transactions */}
-                    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                        <CardHeader className="border-b border-gray-200 pb-3">
-                            <CardTitle className="text-lg font-semibold text-gray-800">
-                                Transactions Financières (FCFA)
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="h-80">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={monthlyStats}
-                                        margin={{top: 10, right: 30, left: 20, bottom: 5}}
-                                    >
-                                        <defs>
-                                            <linearGradient id="colorTransactions" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.3}/>
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid
-                                            strokeDasharray="3 3"
-                                            stroke="#f0f0f0"
-                                            vertical={false}
-                                        />
-                                        <XAxis
-                                            dataKey="month"
-                                            stroke="#666"
-                                            fontSize={12}
-                                            tickLine={false}
-                                            axisLine={{stroke: '#E5E7EB'}}
-                                        />
-                                        <YAxis
-                                            stroke="#666"
-                                            fontSize={12}
-                                            tickLine={false}
-                                            axisLine={{stroke: '#E5E7EB'}}
-                                            tickFormatter={(value) => `${value.toLocaleString('fr-FR')}`}
-                                        />
-                                        <Tooltip content={<CustomTooltip/>}/>
-                                        <Bar
-                                            dataKey="transactions"
-                                            fill="url(#colorTransactions)"
-                                            radius={[4, 4, 0, 0]}
-                                            maxBarSize={50}
-                                        />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {/* Publications card */}
+                    <PublicationsCard data={analyticsData.publications_data} />
 
                     {/* Sector Distribution */}
                     <Card>
