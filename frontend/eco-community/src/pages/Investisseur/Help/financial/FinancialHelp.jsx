@@ -41,10 +41,12 @@ const FinancialHelpProposalPage = ({ project, onBack }) => {
         setError(null);
 
         try {
-            // Updated to match your API endpoint structure
+            // Convert to string to preserve exact decimal precision
+            const formattedAmount = Number(formData.investment_amount).toFixed(2);
+
             const response = await api.post('/proposals/financial/', {
                 ...formData,
-                investment_amount: parseFloat(formData.investment_amount) // Ensure number for DecimalField
+                investment_amount: formattedAmount // Send as string to preserve precision
             });
 
             navigate('/investors/project', {
@@ -162,13 +164,26 @@ const FinancialHelpProposalPage = ({ project, onBack }) => {
                                 <DollarSign
                                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"/>
                                 <input
-                                    type="number"
+                                    type="text" // Changed from "number" to "text"
                                     required
                                     name="investment_amount"
                                     value={formData.investment_amount}
-                                    onChange={handleInputChange}
+                                    onChange={(e) => {
+                                        // Only allow numbers and decimal point
+                                        const value = e.target.value.replace(/[^\d.]/g, '');
+                                        // Ensure only one decimal point
+                                        const parts = value.split('.');
+                                        const formattedValue = parts.length > 2 ?
+                                            `${parts[0]}.${parts.slice(1).join('')}` : value;
+                                        handleInputChange({
+                                            target: {
+                                                name: 'investment_amount',
+                                                value: formattedValue
+                                            }
+                                        });
+                                    }}
                                     className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                    placeholder="0"
+                                    placeholder="0.00"
                                 />
                             </div>
                         </div>
@@ -251,9 +266,10 @@ const FinancialHelpProposalPage = ({ project, onBack }) => {
                         </div>
 
                         <div className="flex items-start bg-blue-50 p-4 rounded-lg">
-                            <Info className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
+                            <Info className="h-5 w-5 text-blue-500 mr-3 mt-0.5"/>
                             <p className="text-sm text-blue-700">
-                                Cette proposition sera envoyée à l'entrepreneur pour examen. Vous pourrez ensuite discuter des détails et finaliser les termes de l'investissement.
+                                Cette proposition sera envoyée à l'entrepreneur pour examen. Vous pourrez ensuite
+                                discuter des détails et finaliser les termes de l'investissement.
                             </p>
                         </div>
 
