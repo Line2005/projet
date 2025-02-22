@@ -14,7 +14,7 @@ import {
     Filter,
     LogOut,
     Settings,
-    CheckCircle, X, Menu
+    CheckCircle, X, Menu, FileText
 } from 'lucide-react';
 import api from "../../../Services/api.js";
 import AnnouncementImage from "./AnnouncementImage.jsx";
@@ -166,44 +166,46 @@ const NGOAnnouncementsPage = () => {
                 </button>
             </div>
             {/* Side Navigation */}
-            <aside className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
-                isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-            } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 lg:block shadow-xl`}>
-                <div className="p-6">
-                    <h2 className="text-white text-2xl font-bold mb-8">
+            <aside
+                className={`fixed top-0 left-0 h-full w-[16vw] min-w-48 max-w-72 bg-gradient-to-b from-emerald-700 to-emerald-800 transform ${
+                    isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+                } lg:translate-x-0 transition-transform duration-200 ease-in-out z-40 shadow-xl`}>
+                <div className="p-4 xl:p-6">
+                    <h2 className="text-white text-xl xl:text-2xl font-bold mb-6 xl:mb-8 flex items-center">
+                        <FileText className="h-5 w-5 xl:h-6 xl:w-6 mr-2"/>
                         EcoCommunity
                     </h2>
-                    <nav className="space-y-2">
+                    <nav className="space-y-1 xl:space-y-2">
                         <a href="/association/announce"
-                           className="flex items-center space-x-3 bg-emerald-600/50 text-white px-4 py-3 rounded-lg">
-                            <Bell className="h-5 w-5"/>
-                            <span>Annonces</span>
+                           className="flex items-center space-x-2 xl:space-x-3 bg-emerald-600/50 text-white px-3 xl:px-4 py-2 xl:py-3 rounded-lg">
+                            <Bell className="h-4 w-4 xl:h-5 xl:w-5"/>
+                            <span className="text-sm xl:text-base">Annonces</span>
                         </a>
                         <a href="/association/events"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <Calendar className="h-5 w-5"/>
-                            <span>Événements</span>
+                           className="flex items-center space-x-2 xl:space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-3 xl:px-4 py-2 xl:py-3 rounded-lg transition-all duration-200">
+                            <Calendar className="h-4 w-4 xl:h-5 xl:w-5"/>
+                            <span className="text-sm xl:text-base">Événements</span>
                         </a>
                         <a href="/association/registrations"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <ClipboardList className="h-5 w-5"/>
-                            <span>Inscriptions</span>
+                           className="flex items-center space-x-2 xl:space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-3 xl:px-4 py-2 xl:py-3 rounded-lg transition-all duration-200">
+                            <ClipboardList className="h-4 w-4 xl:h-5 xl:w-5"/>
+                            <span className="text-sm xl:text-base">Inscriptions</span>
                         </a>
                         <a href="/association/settings"
-                           className="flex items-center space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-4 py-3 rounded-lg">
-                            <Settings className="h-5 w-5"/>
-                            <span>Paramètres</span>
+                           className="flex items-center space-x-2 xl:space-x-3 text-emerald-100 hover:bg-emerald-600/50 px-3 xl:px-4 py-2 xl:py-3 rounded-lg transition-all duration-200">
+                            <Settings className="h-4 w-4 xl:h-5 xl:w-5"/>
+                            <span className="text-sm xl:text-base">Paramètres</span>
                         </a>
                     </nav>
                 </div>
-                <div className="absolute bottom-0 left-0 right-0 p-6">
+                <div className="absolute bottom-0 left-0 right-0 p-4 xl:p-6">
                     <button
                         onClick={handleLogout}
                         disabled={isLoggingOut}
-                        className="flex items-center space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-4 py-3 rounded-lg"
+                        className="flex items-center space-x-2 xl:space-x-3 text-emerald-100 hover:bg-red-500/20 w-full px-3 xl:px-4 py-2 xl:py-3 rounded-lg transition-all duration-200"
                     >
-                        <LogOut className="h-5 w-5"/>
-                        <span>{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
+                        <LogOut className="h-4 w-4 xl:h-5 xl:w-5"/>
+                        <span className="text-sm xl:text-base">{isLoggingOut ? 'Déconnexion...' : 'Déconnexion'}</span>
                     </button>
                 </div>
             </aside>
@@ -218,7 +220,7 @@ const NGOAnnouncementsPage = () => {
                             <p className="text-gray-600">Gérez vos annonces et suivez les candidatures</p>
                         </div>
                         <div className="flex gap-3">
-                            <button
+                        <button
                                 onClick={handleCreateAnnouncement}
                                 className="inline-flex items-center px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
                             >
