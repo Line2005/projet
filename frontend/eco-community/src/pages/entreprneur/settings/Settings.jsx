@@ -18,6 +18,7 @@ import {
 import api from "../../../Services/api.js";
 import Alert from "../../../components/ui/alert.jsx";
 import {AlertDescription} from "@chakra-ui/react";
+import {Card} from "../../../components/ui/card.jsx";
 
 const SettingsPage = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -222,14 +223,6 @@ const SettingsPage = () => {
         setIsMobileMenuOpen(!isMobileMenuOpen);
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50">
             {/* Alert Messages */}
@@ -329,233 +322,257 @@ const SettingsPage = () => {
                             </div>
                     </div>
 
-                        {/* Settings Navigation */}
-                        <div className="bg-white rounded-xl shadow-md p-6 mb-6 backdrop-blur-lg bg-opacity-90">
-                            <div className="flex flex-wrap gap-4">
+                    {/* Loading State */}
+                    {loading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+                        </div>
+                    ) : error ? (
+                        <Card className="p-8 text-center">
+                            <div className="max-w-md mx-auto">
+                                <X className="h-16 w-16 text-red-400 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold text-gray-900 mb-2">Erreur</h3>
+                                <p className="text-gray-600">{error}</p>
                                 <button
-                                    onClick={() => setActiveTab('profile')}
-                                    className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                                        activeTab === 'profile'
-                                            ? 'bg-emerald-100 text-emerald-700'
-                                            : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
+                                    onClick={() => window.location.reload()}
+                                    className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all"
                                 >
-                                    <div className="flex items-center">
-                                        <User className="h-4 w-4 mr-2"/>
-                                        Profil
-                                    </div>
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('security')}
-                                    className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                                        activeTab === 'security'
-                                            ? 'bg-emerald-100 text-emerald-700'
-                                            : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    <div className="flex items-center">
-                                        <Lock className="h-4 w-4 mr-2"/>
-                                        Sécurité
-                                    </div>
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('privacy')}
-                                    className={`px-4 py-2 rounded-lg transition-all duration-200 ${
-                                        activeTab === 'privacy'
-                                            ? 'bg-emerald-100 text-emerald-700'
-                                            : 'text-gray-600 hover:bg-gray-100'
-                                    }`}
-                                >
-                                    <div className="flex items-center">
-                                        <Shield className="h-4 w-4 mr-2"/>
-                                        Confidentialité
-                                    </div>
+                                    Réessayer
                                 </button>
                             </div>
-                        </div>
+                        </Card>
+                    ) : (
+                        <>
 
-                        {/* Settings Content */}
-                        <div className="bg-white rounded-xl shadow-md p-6 backdrop-blur-lg bg-opacity-90">
-                            {activeTab === 'profile' && (
-                                <div className="space-y-6">
-                                    <div className="flex items-center space-x-4 mb-6">
-                                        <div
-                                            className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
-                                            {userProfile?.user?.profile_image ? (
-                                                <img
-                                                    src={getImageUrl(userProfile.user.profile_image)}
-                                                    alt="Profile"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <User className="w-full h-full p-4 text-gray-400" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-semibold text-gray-900">Photo de profil</h3>
-                                            <div className="flex space-x-3 mt-2">
-                                                <label
-                                                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200 cursor-pointer">
+                                {/* Settings Navigation */}
+                                <div className="bg-white rounded-xl shadow-md p-6 mb-6 backdrop-blur-lg bg-opacity-90">
+                                    <div className="flex flex-wrap gap-4">
+                                        <button
+                                            onClick={() => setActiveTab('profile')}
+                                            className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                                                activeTab === 'profile'
+                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                    : 'text-gray-600 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            <div className="flex items-center">
+                                                <User className="h-4 w-4 mr-2"/>
+                                                Profil
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('security')}
+                                            className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                                                activeTab === 'security'
+                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                    : 'text-gray-600 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            <div className="flex items-center">
+                                                <Lock className="h-4 w-4 mr-2"/>
+                                                Sécurité
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('privacy')}
+                                            className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                                                activeTab === 'privacy'
+                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                    : 'text-gray-600 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            <div className="flex items-center">
+                                                <Shield className="h-4 w-4 mr-2"/>
+                                                Confidentialité
+                                            </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Settings Content */}
+                                <div className="bg-white rounded-xl shadow-md p-6 backdrop-blur-lg bg-opacity-90">
+                                    {activeTab === 'profile' && (
+                                        <div className="space-y-6">
+                                            <div className="flex items-center space-x-4 mb-6">
+                                                <div
+                                                    className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
+                                                    {userProfile?.user?.profile_image ? (
+                                                        <img
+                                                            src={getImageUrl(userProfile.user.profile_image)}
+                                                            alt="Profile"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <User className="w-full h-full p-4 text-gray-400" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-semibold text-gray-900">Photo de profil</h3>
+                                                    <div className="flex space-x-3 mt-2">
+                                                        <label
+                                                            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200 cursor-pointer">
+                                                            <input
+                                                                type="file"
+                                                                className="hidden"
+                                                                accept="image/*"
+                                                                onChange={handleImageUpload}
+                                                            />
+                                                            Modifier
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Noms
+                                                    </label>
                                                     <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        accept="image/*"
-                                                        onChange={handleImageUpload}
+                                                        type="text"
+                                                        name="first_name"
+                                                        value={formData.first_name}
+                                                        onChange={handleInputChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                                                     />
-                                                    Modifier
-                                                </label>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Prenom
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        name="last_name"
+                                                        value={formData.last_name}
+                                                        onChange={handleInputChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                </div>
+
+                                                {/* Common fields for all user types */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Email
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        name="email"
+                                                        value={formData.email}
+                                                        onChange={handleInputChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                        Phone
+                                                    </label>
+                                                    <input
+                                                        type="tel"
+                                                        name="phone"
+                                                        value={formData.phone}
+                                                        onChange={handleInputChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                    />
+                                                </div>
+
+                                                {/* Bio field for all users */}
+                                                <div className="md:col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
+                                                    <textarea
+                                                        name="bio"
+                                                        value={formData.bio}
+                                                        onChange={handleInputChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        rows="4"
+                                                        placeholder="Tell us about yourself or your organization..."
+                                                    ></textarea>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-end space-x-3 pt-6">
+                                                <button
+                                                    onClick={() => fetchUserProfile()}
+                                                    className="px-6 py-2 border-2 border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-all duration-200"
+                                                >
+                                                    Annuler
+                                                </button>
+                                                <button
+                                                    onClick={handleProfileUpdate}
+                                                    className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200"
+                                                >
+                                                    Enregistrer
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Noms
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="first_name"
-                                                value={formData.first_name}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                            />
+                                    {activeTab === 'security' && (
+                                        <div className="space-y-6">
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Modifier le mot de
+                                                    passe</h3>
+                                                <div className="space-y-4">
+                                                    <input
+                                                        type="password"
+                                                        name="current_password"
+                                                        value={passwordData.current_password}
+                                                        onChange={handlePasswordChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        placeholder="Mot de passe actuel"
+                                                    />
+                                                    <input
+                                                        type="password"
+                                                        name="new_password"
+                                                        value={passwordData.new_password}
+                                                        onChange={handlePasswordChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        placeholder="Nouveau mot de passe"
+                                                    />
+                                                    <input
+                                                        type="password"
+                                                        name="confirm_password"
+                                                        value={passwordData.confirm_password}
+                                                        onChange={handlePasswordChange}
+                                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                                                        placeholder="Confirmer le nouveau mot de passe"
+                                                    />
+                                                </div>
+                                                <div className="flex justify-end space-x-3 pt-6">
+                                                    <button
+                                                        onClick={handlePasswordUpdate}
+                                                        className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200"
+                                                    >
+                                                        Enregistrer
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Prenom
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="last_name"
-                                                value={formData.last_name}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                            />
-                                        </div>
+                                    )}
 
-                                        {/* Common fields for all user types */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Email
-                                            </label>
-                                            <input
-                                                type="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Phone
-                                            </label>
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                value={formData.phone}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                            />
-                                        </div>
+                                    {activeTab === 'privacy' && (
+                                        <div className="space-y-6">
+                                            <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres de
+                                                confidentialité</h3>
 
-                                        {/* Bio field for all users */}
-                                        <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                                            <textarea
-                                                name="bio"
-                                                value={formData.bio}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                                rows="4"
-                                                placeholder="Tell us about yourself or your organization..."
-                                            ></textarea>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <h4 className="text-md font-medium text-gray-900 mb-2">Suppression du compte</h4>
+                                                    <p className="text-sm text-gray-600 mb-4">
+                                                        La suppression de votre compte est définitive. Toutes vos données seront effacées.
+                                                    </p>
+                                                    <button
+                                                        onClick={handleDeleteAccount}
+                                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200"
+                                                    >
+                                                        Supprimer mon compte
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <div className="flex justify-end space-x-3 pt-6">
-                                        <button
-                                            onClick={() => fetchUserProfile()}
-                                            className="px-6 py-2 border-2 border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-all duration-200"
-                                        >
-                                            Annuler
-                                        </button>
-                                        <button
-                                            onClick={handleProfileUpdate}
-                                            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200"
-                                        >
-                                            Enregistrer
-                                        </button>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-
-                            {activeTab === 'security' && (
-                                <div className="space-y-6">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Modifier le mot de
-                                            passe</h3>
-                                        <div className="space-y-4">
-                                            <input
-                                                type="password"
-                                                name="current_password"
-                                                value={passwordData.current_password}
-                                                onChange={handlePasswordChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                                placeholder="Mot de passe actuel"
-                                            />
-                                            <input
-                                                type="password"
-                                                name="new_password"
-                                                value={passwordData.new_password}
-                                                onChange={handlePasswordChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                                placeholder="Nouveau mot de passe"
-                                            />
-                                            <input
-                                                type="password"
-                                                name="confirm_password"
-                                                value={passwordData.confirm_password}
-                                                onChange={handlePasswordChange}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                                                placeholder="Confirmer le nouveau mot de passe"
-                                            />
-                                        </div>
-                                        <div className="flex justify-end space-x-3 pt-6">
-                                            <button
-                                                onClick={handlePasswordUpdate}
-                                                className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all duration-200"
-                                            >
-                                                Enregistrer
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'privacy' && (
-                                <div className="space-y-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Paramètres de
-                                        confidentialité</h3>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h4 className="text-md font-medium text-gray-900 mb-2">Suppression du compte</h4>
-                                            <p className="text-sm text-gray-600 mb-4">
-                                                La suppression de votre compte est définitive. Toutes vos données seront effacées.
-                                            </p>
-                                            <button
-                                                onClick={handleDeleteAccount}
-                                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200"
-                                            >
-                                                Supprimer mon compte
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        </>
+                        )}
                     </div>
                 </div>
             </div>

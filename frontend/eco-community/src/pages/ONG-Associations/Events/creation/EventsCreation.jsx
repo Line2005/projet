@@ -39,14 +39,13 @@ const CreateEventPage = () => {
         setImageFile(null);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmitWithStatus = async (status) => {
         setError(null);
 
         // Frontend validation
         const validationErrors = {};
 
-        // Basic field validations (same as before)
+        // Basic field validations
         if (!formData.title.trim()) validationErrors.title = 'Le titre est requis';
         if (!formData.type) validationErrors.type = 'Le type d\'événement est requis';
         if (!formData.description.trim()) validationErrors.description = 'La description est requise';
@@ -79,7 +78,6 @@ const CreateEventPage = () => {
                 imageData = await new Promise((resolve) => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        // Extract base64 data from the result
                         const base64String = reader.result.split(',')[1];
                         resolve(base64String);
                     };
@@ -87,9 +85,10 @@ const CreateEventPage = () => {
                 });
             }
 
-            // Prepare the request data
+            // Prepare the request data with the specified status
             const requestData = {
                 ...formData,
+                status: status,
                 image: imageData
             };
 
@@ -135,7 +134,7 @@ const CreateEventPage = () => {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmitWithStatus} className="space-y-6">
                     {/* Image Upload section remains the same as previous implementation */}
                     <div className="bg-white rounded-xl shadow-md p-6">
                         <h2 className="text-lg font-semibold mb-4">Image de l'événement</h2>
@@ -324,22 +323,14 @@ const CreateEventPage = () => {
                     <div className="flex justify-end space-x-4">
                         <button
                             type="button"
-                            onClick={(e) => {
-                                // Explicitly set status to draft when this button is clicked
-                                setFormData(prev => ({...prev, status: 'draft'}));
-                                handleSubmit(e);
-                            }}
+                            onClick={() => handleSubmitWithStatus('draft')}
                             className="px-6 py-3 rounded-lg border border-emerald-600 text-emerald-600 hover:bg-emerald-50"
                         >
                             Enregistrer comme brouillon
                         </button>
                         <button
-                            type="submit"
-                            onClick={(e) => {
-                                // Explicitly set status to published when this button is clicked
-                                setFormData(prev => ({...prev, status: 'published'}));
-                                handleSubmit(e);
-                            }}
+                            type="button"
+                            onClick={() => handleSubmitWithStatus('published')}
                             disabled={isSubmitting}
                             className={`px-6 py-3 rounded-lg focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 ${
                                 isSubmitting

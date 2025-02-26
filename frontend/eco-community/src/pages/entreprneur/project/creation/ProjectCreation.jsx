@@ -487,30 +487,146 @@ const ProjectCreationForm = () => {
                                     <div className="space-y-4">
                                         <h3 className="font-semibold text-lg text-emerald-700">Documents Requis</h3>
                                         <div className="space-y-4">
+                                            {/* Required Documents */}
+                                            {/* ID Card Upload */}
                                             <div className="border rounded-lg p-4">
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                                     Carte Nationale d'Identité *
                                                 </label>
-                                                <div className="flex items-center justify-center w-full">
-                                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                            <Upload className="w-8 h-8 mb-2 text-emerald-500" />
-                                                            <p className="text-sm text-gray-500">Cliquez pour télécharger</p>
+                                                <div className="space-y-4">
+                                                    {formData.documents.id_card ? (
+                                                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                                            <div className="flex items-center space-x-3">
+                                                                <div className="flex-shrink-0">
+                                                                    {formData.documents.id_card.type.includes('image') ? (
+                                                                        <img
+                                                                            src={URL.createObjectURL(formData.documents.id_card)}
+                                                                            alt="ID Preview"
+                                                                            className="h-16 w-16 object-cover rounded"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
+                                                                            <p className="text-xs text-gray-600">PDF</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {formData.documents.id_card.name}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        {(formData.documents.id_card.size / 1024 / 1024).toFixed(2)} MB
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        documents: {
+                                                                            ...prev.documents,
+                                                                            id_card: null
+                                                                        }
+                                                                    }));
+                                                                }}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                Changer
+                                                            </button>
                                                         </div>
-                                                        <input
-                                                            type="file"
-                                                            name="id_card"
-                                                            onChange={(e) => handleFileUpload(e, 'id_card')}
-                                                            accept=".pdf,.jpg,.jpeg,.png"
-                                                            required
-                                                        />
-                                                    </label>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center w-full">
+                                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                    <Upload className="w-8 h-8 mb-2 text-emerald-500" />
+                                                                    <p className="text-sm text-gray-500">Cliquez pour télécharger</p>
+                                                                </div>
+                                                                <input
+                                                                    type="file"
+                                                                    name="id_card"
+                                                                    onChange={(e) => handleFileUpload(e, 'id_card')}
+                                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                                    required
+                                                                    className="hidden"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Tax Clearance Upload */}
+                                            <div className="border rounded-lg p-4">
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Attestation de Non Redevance Fiscale *
+                                                </label>
+                                                <div className="space-y-4">
+                                                    {formData.documents.tax_clearance ? (
+                                                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                                            <div className="flex items-center space-x-3">
+                                                                <div className="flex-shrink-0">
+                                                                    {formData.documents.tax_clearance.type.includes('image') ? (
+                                                                        <img
+                                                                            src={URL.createObjectURL(formData.documents.tax_clearance)}
+                                                                            alt="Tax Clearance Preview"
+                                                                            className="h-16 w-16 object-cover rounded"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
+                                                                            <p className="text-xs text-gray-600">PDF</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {formData.documents.tax_clearance.name}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        {(formData.documents.tax_clearance.size / 1024 / 1024).toFixed(2)} MB
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        documents: {
+                                                                            ...prev.documents,
+                                                                            tax_clearance: null
+                                                                        }
+                                                                    }));
+                                                                }}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                Changer
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center w-full">
+                                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                    <Upload className="w-8 h-8 mb-2 text-emerald-500" />
+                                                                    <p className="text-sm text-gray-500">Cliquez pour télécharger</p>
+                                                                </div>
+                                                                <input
+                                                                    type="file"
+                                                                    name="tax_clearance"
+                                                                    onChange={(e) => handleFileUpload(e, 'tax_clearance')}
+                                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                                    required
+                                                                    className="hidden"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
                                             <div className="border rounded-lg p-4">
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Attestation de Non Redevance Fiscale *
+                                                    Photos du Projet *
                                                 </label>
                                                 <div className="flex items-center justify-center w-full">
                                                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
@@ -520,10 +636,12 @@ const ProjectCreationForm = () => {
                                                         </div>
                                                         <input
                                                             type="file"
-                                                            name="tax_clearance"
-                                                            onChange={(e) => handleFileUpload(e, 'tax_clearance')}
-                                                            accept=".pdf,.jpg,.jpeg,.png"
+                                                            name="project_photos"
+                                                            onChange={(e) => handleFileUpload(e, 'project_photos')}
+                                                            accept=".jpg,.jpeg,.png"
                                                             required
+                                                            multiple
+                                                            className="hidden"
                                                         />
                                                     </label>
                                                 </div>
@@ -534,23 +652,71 @@ const ProjectCreationForm = () => {
                                     <div className="space-y-4">
                                         <h3 className="font-semibold text-lg text-emerald-700">Documents Optionnels</h3>
                                         <div className="space-y-4">
+                                            {/* Optional Documents */}
+                                            {/* Business Register Upload */}
                                             <div className="border rounded-lg p-4">
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                                     Registre de Commerce
                                                 </label>
-                                                <div className="flex items-center justify-center w-full">
-                                                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                            <Upload className="w-8 h-8 mb-2 text-emerald-500" />
-                                                            <p className="text-sm text-gray-500">Cliquez pour télécharger</p>
+                                                <div className="space-y-4">
+                                                    {formData.documents.business_register ? (
+                                                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                                            <div className="flex items-center space-x-3">
+                                                                <div className="flex-shrink-0">
+                                                                    {formData.documents.business_register.type.includes('image') ? (
+                                                                        <img
+                                                                            src={URL.createObjectURL(formData.documents.business_register)}
+                                                                            alt="Business Register Preview"
+                                                                            className="h-16 w-16 object-cover rounded"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
+                                                                            <p className="text-xs text-gray-600">PDF</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {formData.documents.business_register.name}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        {(formData.documents.business_register.size / 1024 / 1024).toFixed(2)} MB
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        documents: {
+                                                                            ...prev.documents,
+                                                                            business_register: null
+                                                                        }
+                                                                    }));
+                                                                }}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                Changer
+                                                            </button>
                                                         </div>
-                                                        <input
-                                                            type="file"
-                                                            name="business_register"
-                                                            onChange={(e) => handleFileUpload(e, 'business_register')}
-                                                            accept=".pdf,.jpg,.jpeg,.png"
-                                                        />
-                                                    </label>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center w-full">
+                                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                    <Upload className="w-8 h-8 mb-2 text-emerald-500" />
+                                                                    <p className="text-sm text-gray-500">Cliquez pour télécharger</p>
+                                                                </div>
+                                                                <input
+                                                                    type="file"
+                                                                    name="business_register"
+                                                                    onChange={(e) => handleFileUpload(e, 'business_register')}
+                                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                                    className="hidden"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -558,49 +724,73 @@ const ProjectCreationForm = () => {
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                                     Étude de Faisabilité
                                                 </label>
-                                                <div className="flex items-center justify-center w-full">
-                                                    <label
-                                                        className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                <div className="space-y-4">
+                                                    {formData.documents.feasibility_study ? (
                                                         <div
-                                                            className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                            <Upload className="w-8 h-8 mb-2 text-emerald-500"/>
-                                                            <p className="text-sm text-gray-500">Cliquez pour
-                                                                télécharger</p>
-                                                        </div>
-                                                        <input
-                                                            type="file"
-                                                            name="feasibility_study"
-                                                            onChange={(e) => handleFileUpload(e, 'feasibility_study')}
-                                                            accept=".pdf,.jpg,.jpeg,.png"
-                                                        />
-                                                    </label>
-                                                </div>
-
-                                                <div className="border rounded-lg p-4">
-                                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                        Photo du projet *
-                                                    </label>
-                                                    <div className="flex items-center justify-center w-full">
-                                                        <label
-                                                            className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                                            <div
-                                                                className="flex flex-col items-center justify-center pt-5 pb-6">
-                                                                <Upload className="w-8 h-8 mb-2 text-emerald-500"/>
-                                                                <p className="text-sm text-gray-500">Cliquez pour
-                                                                    télécharger</p>
+                                                            className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                                            <div className="flex items-center space-x-3">
+                                                                <div className="flex-shrink-0">
+                                                                    {formData.documents.feasibility_study.type.includes('image') ? (
+                                                                        <img
+                                                                            src={URL.createObjectURL(formData.documents.feasibility_study)}
+                                                                            alt="Feasibility Study Preview"
+                                                                            className="h-16 w-16 object-cover rounded"
+                                                                        />
+                                                                    ) : (
+                                                                        <div
+                                                                            className="h-16 w-16 bg-gray-200 rounded flex items-center justify-center">
+                                                                            <p className="text-xs text-gray-600">PDF</p>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {formData.documents.feasibility_study.name}
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        {(formData.documents.feasibility_study.size / 1024 / 1024).toFixed(2)} MB
+                                                                    </p>
+                                                                </div>
                                                             </div>
-                                                            <input
-                                                                type="file"
-                                                                name="project_photos"
-                                                                onChange={(e) => handleFileUpload(e, 'project_photos')}
-                                                                accept=".pdf,.jpg,.jpeg,.png"
-                                                                required
-                                                            />
-                                                        </label>
-                                                    </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        documents: {
+                                                                            ...prev.documents,
+                                                                            feasibility_study: null
+                                                                        }
+                                                                    }));
+                                                                }}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                Changer
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center w-full">
+                                                            <label
+                                                                className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                                <div
+                                                                    className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                                    <Upload className="w-8 h-8 mb-2 text-emerald-500"/>
+                                                                    <p className="text-sm text-gray-500">Cliquez pour
+                                                                        télécharger</p>
+                                                                </div>
+                                                                <input
+                                                                    type="file"
+                                                                    name="feasibility_study"
+                                                                    onChange={(e) => handleFileUpload(e, 'feasibility_study')}
+                                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                                    className="hidden"
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    )}
                                                 </div>
-
                                             </div>
+
                                         </div>
                                     </div>
                                 </div>
