@@ -11,6 +11,7 @@ export const NotificationDropdown = ({ notifications, onClose, onConversationCli
         </div>
         <div className="max-h-[400px] overflow-y-auto">
             {notifications.map(conversation => (
+
                 <div
                     key={conversation.id}
                     className="p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors duration-200"

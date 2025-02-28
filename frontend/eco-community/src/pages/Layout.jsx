@@ -131,35 +131,75 @@ const EcoCommunity = () => {
 
             <main>
                 {/* Hero Section */}
-                <section id="accueil" className="relative bg-emerald-700 pt-24 pb-32">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-                            <div className="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 sm:text-center lg:px-0 lg:text-left lg:flex lg:items-center">
+                <section id="accueil" className="relative bg-gradient-to-br from-emerald-800 to-emerald-600 pt-28 pb-36 overflow-hidden">
+                    {/* Background pattern */}
+                    <div className="absolute inset-0 opacity-10">
+                        <svg className="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                            <pattern id="pattern-circles" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <circle cx="10" cy="10" r="1.5" fill="currentColor" className="text-white" />
+                            </pattern>
+                            <rect x="0" y="0" width="100%" height="100%" fill="url(#pattern-circles)" />
+                        </svg>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+                            <div className="col-span-7 mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:px-0 lg:text-left lg:flex lg:items-center">
                                 <div className="lg:py-24">
+                                    <div className="inline-block py-1 px-3 mb-4 bg-emerald-900 bg-opacity-50 rounded-full">
+                                        <p className="text-sm font-medium text-yellow-300">Plateforme Innovante</p>
+                                    </div>
+
                                     <h1 className="mt-4 text-4xl tracking-tight font-extrabold text-white sm:mt-5 sm:text-6xl lg:mt-6 xl:text-6xl">
                                         <span className="block">Développez Votre</span>
                                         <span className="block text-yellow-400">Impact Communautaire</span>
                                     </h1>
-                                    <p className="mt-3 text-base text-gray-100 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl">
-                                        Première plateforme numérique dédiée à l'entrepreneuriat communautaire au Cameroun.
+
+                                    <p className="mt-5 text-base text-gray-100 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl max-w-xl">
+                                        Première plateforme numérique dédiée à l'entrepreneuriat communautaire au Cameroun. Connectez, collaborez et créez un changement positif.
                                     </p>
+
                                     <div className="mt-10 sm:mt-12">
-                                        <div className="sm:flex sm:justify-center lg:justify-start">
-                                            <button className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-600 md:py-4 md:text-lg md:px-10"
-                                                    onClick={handleRegister}
+                                        <div className="sm:flex sm:justify-start gap-4">
+                                            <button
+                                                className="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-lg shadow-lg text-white bg-yellow-500 hover:bg-yellow-600 transition-all duration-300 md:py-4 md:text-lg md:px-10 transform hover:-translate-y-1"
+                                                onClick={handleRegister}
                                             >
-                                                Démarrer un Projet
+                                                <span>Démarrer un Projet</span>
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                </svg>
                                             </button>
-                                            <button className="mt-3 sm:mt-0 sm:ml-3 w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-emerald-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10">
+
+                                            <button className="mt-3 sm:mt-0 w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-white border-opacity-30 text-base font-medium rounded-lg text-white bg-transparent hover:bg-white hover:bg-opacity-10 transition-all duration-300 md:py-4 md:text-lg md:px-10">
                                                 En Savoir Plus
                                             </button>
                                         </div>
                                     </div>
+
+                                    <div className="mt-12 flex items-center">
+                                        <div className="flex -space-x-2">
+                                            {[1, 2, 3, 4].map((i) => (
+                                                <div key={i} className={`w-8 h-8 rounded-full border-2 border-emerald-700 bg-gray-${i * 100}`}></div>
+                                            ))}
+                                        </div>
+                                        <p className="ml-4 text-sm text-gray-100">
+                                            <span className="font-bold">+500</span> entrepreneurs rejoints
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="mt-12 -mb-16 sm:-mb-48 lg:m-0 lg:relative">
-                                <div className="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:max-w-none lg:px-0">
-                                    <img src={aboutImage} alt="Community Impact" className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-xl"/>
+
+                            <div className="mt-12 col-span-5 relative lg:mt-0 hidden lg:block">
+                                <div className="relative mx-auto w-full rounded-lg shadow-lg overflow-hidden">
+                                    <div className="aspect-w-5 aspect-h-6 bg-emerald-500 rounded-lg transform rotate-3 scale-110">
+                                        {/* This would be your hero image */}
+                                        <div className="h-full w-full bg-yellow-400 bg-opacity-20 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-32 w-32 text-white opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

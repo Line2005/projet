@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowLeft, Check, AlertCircle } from 'lucide-react';
+import {Mail, Lock, Eye, EyeOff, ArrowLeft, Check, AlertCircle, TrendingUp} from 'lucide-react';
 import Alert from "../components/ui/alert.jsx";
 import {requestPasswordReset, resetPassword, verifyResetCode} from "../Services/auth.js";
 
@@ -162,7 +162,7 @@ const ForgotPassword = () => {
                 </button>
 
                 <a href="/login" className="block text-sm text-emerald-600 hover:text-emerald-500 text-center">
-                    Back to Login
+                    Retour sur la page de connexion
                 </a>
             </form>
         </>
@@ -306,11 +306,23 @@ const ForgotPassword = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-emerald-700 text-white">
+            {/* Navigation */}
+            <nav className="bg-emerald-700 text-white shadow-lg">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <div className="flex-shrink-0">
-                            <a href="/" className="text-xl font-bold">EcoCommunity</a>
+                        <div className="flex items-center space-x-2">
+                            <a href="/" className="flex items-center space-x-2">
+                                <div className="bg-white p-1 rounded-full">
+                                    <TrendingUp className="w-5 h-5 text-emerald-700" />
+                                </div>
+                                <span className="text-xl font-bold">EcoCommunity</span>
+                            </a>
+                        </div>
+                        <div className="hidden md:block">
+                            <a href="/" className="flex items-center text-emerald-100 hover:text-white transition-colors">
+                                <ArrowLeft className="w-4 h-4 mr-1" />
+                                <span>Retour à l'accueil</span>
+                            </a>
                         </div>
                     </div>
                 </div>

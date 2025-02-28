@@ -23,10 +23,28 @@ const NotificationDropdown = ({ notifications, onClose, onConversationClick }) =
                     // Get investor data directly from the structure
                     const investor = conversation.investor;
                     const investorName = investor ? `${investor.first_name} ${investor.last_name}` : 'Unknown Investor';
-                    const profileImage = investor?.user?.profile_image || '/default-avatar.png';
 
                     // Get project name from help_request
                     const projectName = conversation.help_request?.project?.project_name || 'Non spécifié';
+
+                    const user = investor?.user || {};
+
+                    // Determine the profile image URL
+                    let profileImageUrl = '/default-avatar.png'; // Default fallback image
+
+                    // Try to get the profile image from various possible paths
+                    if (user.profile_image) {
+                        profileImageUrl = user.profile_image;
+                    } else if (investor?.profile_image) {
+                        profileImageUrl = investor?.profile_image;
+                    }
+
+                    // If profile image is a relative URL, make sure it has the correct base URL
+                    if (profileImageUrl && !profileImageUrl.startsWith('http') && !profileImageUrl.startsWith('/default-avatar.png')) {
+                        // Add your API base URL - adjust as needed based on your configuration
+                        const baseUrl = 'http://127.0.0.1:8000';
+                        profileImageUrl = `${baseUrl}${profileImageUrl.startsWith('/') ? '' : '/'}${profileImageUrl}`;
+                    }
 
                     return (
                         <div
@@ -40,9 +58,9 @@ const NotificationDropdown = ({ notifications, onClose, onConversationClick }) =
                             <div className="flex items-start space-x-3">
                                 <div className="relative flex-shrink-0">
                                     <img
-                                        src={profileImage}
+                                        src={profileImageUrl}
                                         alt={investorName}
-                                        className="w-10 h-10 rounded-full object-cover"
+                                        className="w-10 h-10 rounded-full object-cover shadow-sm"
                                         onError={(e) => {
                                             e.target.src = '/default-avatar.png';
                                         }}
@@ -55,7 +73,7 @@ const NotificationDropdown = ({ notifications, onClose, onConversationClick }) =
                                         {investorName}
                                     </p>
                                     <p className="text-xs text-gray-600 truncate">
-                                        {`${conversation.unread_count} nouveau${conversation.unread_count > 1 ? 'x' : ''} message${conversation.unread_count > 1 ? 's' : ''}`}
+                                    {`${conversation.unread_count} nouveau${conversation.unread_count > 1 ? 'x' : ''} message${conversation.unread_count > 1 ? 's' : ''}`}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
                                         Projet: {projectName}
