@@ -32,6 +32,7 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.contrib.auth.hashers import check_password, make_password
 
+from .email_service import email_service
 from .contract import ContractHandler
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models.functions import TruncMonth, ExtractMonth
@@ -2028,50 +2029,57 @@ class EventRegistrationManagementView(APIView):
                 waitlisted.save()
                 self.send_status_notification(waitlisted)
 
+    # Update the send_status_notification method in EventRegistrationManagementView
+
     def send_status_notification(self, registration):
-        """Send email notification about registration status change"""
+        """Send email notification about registration status change using email service"""
         subject = f"Your registration for {registration.event.title}"
+        recipient_email = registration.user.email
 
         if registration.status == 'approved':
-            message = f"""
+            body = f"""
             Bonjour {self.get_user_name(registration.user)},
 
-            Nous avons le plaisir de vous informer que votre inscription à  {registration.event.title} a été approuvée !
+            Nous avons le plaisir de vous informer que votre inscription à {registration.event.title} a été approuvée !
 
-            Détails de l’événement :
+            Détails de l'événement :
             Date: {registration.event.date}
             Heure: {registration.event.time}
             Lieu: {registration.event.location}
 
-            Nous avons hâte de vous voir à l’événement !
+            Nous avons hâte de vous voir à l'événement !
 
             Cordialement,
             {registration.event.organization.organization_name}
             """
         else:  # rejected
-            message = f"""
+            body = f"""
             Bonjour {self.get_user_name(registration.user)},
 
-            Nous regrettons de vous informer que votre inscription à {registration.event.title} a été refusée.. 
+            Nous regrettons de vous informer que votre inscription à {registration.event.title} a été refusée. 
             Cela peut être dû à une capacité limitée ou à d'autres raisons.
 
-            N’hésitez pas à vous inscrire à nos prochains événements.
+            N'hésitez pas à vous inscrire à nos prochains événements.
 
             Cordialement,
             {registration.event.organization.organization_name}
             """
 
         try:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [registration.user.email],
-                fail_silently=False,
+            # Use the email service
+            from .email_service import email_service
+            email_service.send_email(
+                to=recipient_email,
+                subject=subject,
+                body=body
             )
+            return True
         except Exception as e:
             # Log the error but don't fail the request
-            print(f"Failed to send email notification: {str(e)}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send email notification: {str(e)}")
+            return False
 
     def get_user_name(self, user):
         if user.role == 'entrepreneur':
@@ -2082,89 +2090,99 @@ class EventRegistrationManagementView(APIView):
             return user.organization.organization_name
         return user.username
 
-
 class EventReminderView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, event_id):
-        """Send reminder emails to all approved attendees"""
-        try:
-            # Check if user is the event owner
-            if request.user.role != 'ONG-Association':
-                return Response(
-                    {"error": "Only organizations can send event reminders"},
-                    status=status.HTTP_403_FORBIDDEN
+            try:
+                if request.user.role != 'ONG-Association':
+                    return Response(
+                        {"error": "Only organizations can send event reminders"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+                event = get_object_or_404(Event, id=event_id)
+
+                if event.organization.user != request.user:
+                    return Response(
+                        {"error": "You can only send reminders for your own events"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+                approved_registrations = EventRegistration.objects.filter(
+                    event=event, status='approved'
                 )
 
-            event = get_object_or_404(Event, id=event_id)
+                if not approved_registrations.exists():
+                    return Response(
+                        {"message": "No approved attendees found for this event"},
+                        status=status.HTTP_200_OK
+                    )
 
-            # Verify the organization is the event owner
-            if event.organization.user != request.user:
+                sent_count = 0
+                failed_count = 0
+                for registration in approved_registrations:
+                    try:
+                        if self.send_reminder_email(registration):
+                            sent_count += 1
+                    except Exception as e:
+                        failed_count += 1
+                        logger.error(f"Failed to send reminder to {registration.user.email}: {str(e)}")
+
+                if failed_count > 0:
+                    return Response(
+                        {
+                            "message": f"Reminder emails sent to {sent_count} attendees. Failed to send to {failed_count} attendees.",
+                            "status": "partial_success" if sent_count > 0 else "failed"
+                        },
+                        status=status.HTTP_207_MULTI_STATUS if sent_count > 0 else status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+
                 return Response(
-                    {"error": "You can only send reminders for your own events"},
-                    status=status.HTTP_403_FORBIDDEN
+                    {"message": f"Reminder emails sent to {sent_count} attendees"},
+                    status=status.HTTP_200_OK
                 )
 
-            # Get all approved registrations
-            approved_registrations = EventRegistration.objects.filter(
-                event=event, status='approved'
-            )
-
-            # Send reminder emails
-            for registration in approved_registrations:
-                self.send_reminder_email(registration)
-
-            return Response(
-                {"message": f"Reminder emails sent to {approved_registrations.count()} attendees"},
-                status=status.HTTP_200_OK
-            )
-
-        except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            except Exception as e:
+                logger.exception(f"Error in event reminder: {str(e)}")
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
     def send_reminder_email(self, registration):
-        """Send reminder email to an attendee"""
         user = registration.user
         event = registration.event
 
-        # Get user's name based on role
         if user.role == 'entrepreneur':
             name = f"{user.entrepreneur.first_name} {user.entrepreneur.last_name}"
         elif user.role == 'investor':
             name = f"{user.investor.first_name} {user.investor.last_name}"
+        elif user.role == 'ONG-Association':
+            name = user.organization.organization_name
         else:
             name = user.username
 
         subject = f"Rappel : {event.title} approche à grands pas !"
-
-        message = f"""
+        body = f"""
         Bonjour {name},
 
-        Ceci est un rappel amical que  {event.title} aura lieu le {event.date} à {event.time}.
+        Ceci est un rappel amical que {event.title} aura lieu le {event.date} à {event.time}.
 
-        Détails de l’événement :
+        Détails de l'événement :
         Lieu: {event.location}
 
         Nous avons hâte de vous y voir !
 
-        Cordialements,
+        Cordialement,
         {event.organization.organization_name}
         """
 
-        try:
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [user.email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            # Log the error but continue with other emails
-            print(f"Failed to send reminder email to {user.email}: {str(e)}")
+        return email_service.send_email(
+            to=user.email,
+            subject=subject,
+            body=body
+        )
 
 #Users can see the approval of an event
 class UserEventRegistrationsView(APIView):

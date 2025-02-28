@@ -132,11 +132,22 @@ const EventRegistrationsPage = () => {
 
     const handleSendReminderEmails = async () => {
         try {
-            await api.post(`/events/${eventId}/send-reminders/`);
-            alert('Reminder emails have been sent to all approved attendees.');
+            const response = await api.post(`/events/${eventId}/send-reminders/`);
+            if (response.data.status === 'partial_success') {
+                alert(`${response.data.message}`);
+            } else {
+                alert('Reminder emails have been sent to all approved attendees.');
+            }
         } catch (err) {
             console.error('Error sending reminders:', err);
-            alert('Failed to send reminder emails. Please try again later.');
+            if (err.response) {
+                const errorMessage = err.response.data?.error || 'Failed to send reminder emails';
+                alert(`Error: ${errorMessage}`);
+            } else if (err.request) {
+                alert('Failed to send reminder emails: No response received from server');
+            } else {
+                alert(`Failed to send reminder emails: ${err.message}`);
+            }
         }
     };
 
