@@ -266,7 +266,7 @@ const ProjectsPage = () => {
                     </div>
 
                     {/* Search Bar */}
-                    <div className="bg-white rounded-xl shadow-md p-4 mb-6 backdrop-blur-lg bg-opacity-90">
+                    <div className="bg-white rounded-xl shadow-md p-4 mb-6 backdrop-blur-lg bg-opacity-90 w-full max-w-3xl mx-auto">
                         <div className="relative">
                             <input
                                 type="text"
@@ -279,119 +279,117 @@ const ProjectsPage = () => {
                         </div>
                     </div>
 
-                    {/* Projects Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {/* Projects Grid - Responsive with proper breakpoints */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
                         {filteredProjects.map((project) => (
-                                <div
-                                    key={project.id}
-                                    className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 flex flex-col"
-                                    aria-label={`Project: ${project.project_name}`}
-                                >
-                                    <div className="relative">
-                                        <img
-                                            src={getImageUrl(project)}
-                                            alt={`Project cover for ${project.project_name}`}
-                                            className="w-full h-48 object-cover"
-                                            onError={(e) => {
-                                                e.target.src = "/api/placeholder/400/250";
-                                                e.target.alt = "Project image placeholder";
-                                            }}
-                                            loading="lazy"
-                                        />
-                                        <div className="absolute top-4 right-4 flex space-x-2">
-                                            <span
-                                                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}
-                                                aria-label={`Status: ${project.status_display}`}
-                                            >
-                                                {project.status_display}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 flex flex-col flex-grow">
-                                        <div className="mb-4">
-                                            <SectorDisplay sector={project.sector}/>
-                                        </div>
-
-                                        <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-emerald-600 transition-colors">
-                                            {project.project_name}
-                                        </h3>
-
-                                        <p className="text-gray-600 mb-4 line-clamp-3">{project.description}</p>
-
-                                        <div className="space-y-3 mb-4 mt-auto">
-                                            <div className="flex items-center text-gray-600">
-                                                <DollarSign className="h-4 w-4 mr-2 text-emerald-500"
-                                                            aria-hidden="true"/>
-                                                <span
-                                                    className="text-sm">{project.estimated_budget.toLocaleString()} FCFA</span>
-                                            </div>
-                                            <div className="flex items-center text-gray-600">
-                                                <Calendar className="h-4 w-4 mr-2 text-emerald-500" aria-hidden="true"/>
-                                                <span className="text-sm">
-                                                    {new Date(project.created_at).toLocaleDateString(undefined, {
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric'
-                                                    })}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <button
-                                                onClick={() => handleDeleteProject(project.id)}
-                                                className="flex items-center justify-center px-3 py-2.5 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-300"
-                                                aria-label={`Delete ${project.project_name}`}
-                                            >
-                                                <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                                                Supprimer
-                                            </button>
-
-                                            <button
-                                                onClick={() => handleProjectDetails(project)}
-                                                className="flex items-center justify-center px-3 py-2.5 border-2 border-emerald-600 text-emerald-600 text-sm rounded-lg hover:bg-emerald-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                                                aria-label={`View details for ${project.project_name}`}
-                                            >
-                                                <Eye className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                                                Voir détails
-                                            </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-3 mt-3">
-                                            {project.status === 'approved' ? (
-                                                <>
-                                                    <button
-                                                        className="flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                                                        onClick={() => navigate(`/entrepreneur/request?projectId=${project.id}`)}
-                                                        aria-label={`Request help for ${project.project_name}`}
-                                                    >
-                                                        <HelpCircle className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                                                        Aide
-                                                    </button>
-
-                                                    <button
-                                                        className="flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-600 text-sm rounded-lg hover:bg-blue-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                                                        onClick={() => toggleChatbot(project)}
-                                                        aria-label={`Chat about ${project.project_name}`}
-                                                    >
-                                                        <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                                                        Discuter
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <button
-                                                    className="col-span-2 flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-600 text-sm rounded-lg hover:bg-blue-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                                                    onClick={() => toggleChatbot(project)}  // Pass the project for project-specific mode
-                                                    aria-label={`Chat about ${project.project_name}`}
-                                                >
-                                                    <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden="true"/>
-                                                    Discuter
-                                                </button>
-                                            )}
-                                        </div>
+                            <div
+                                key={project.id}
+                                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 flex flex-col h-full"
+                                aria-label={`Project: ${project.project_name}`}
+                            >
+                                <div className="relative">
+                                    <img
+                                        src={getImageUrl(project)}
+                                        alt={`Project cover for ${project.project_name}`}
+                                        className="w-full h-40 sm:h-48 object-cover"
+                                        onError={(e) => {
+                                            e.target.src = "/api/placeholder/400/250";
+                                            e.target.alt = "Project image placeholder";
+                                        }}
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute top-3 right-3 flex space-x-2">
+                    <span
+                        className={`px-2 py-1 text-xs sm:px-3 sm:py-1 sm:text-sm rounded-full font-medium ${getStatusColor(project.status)}`}
+                        aria-label={`Status: ${project.status_display}`}
+                    >
+                        {project.status_display}
+                    </span>
                                     </div>
                                 </div>
+
+                                <div className="p-4 sm:p-6 flex flex-col flex-grow">
+                                    <div className="mb-3 sm:mb-4">
+                                        <SectorDisplay sector={project.sector}/>
+                                    </div>
+
+                                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 hover:text-emerald-600 transition-colors line-clamp-2">
+                                        {project.project_name}
+                                    </h3>
+
+                                    <p className="text-sm sm:text-base text-gray-600 mb-4 line-clamp-3">{project.description}</p>
+
+                                    <div className="space-y-2 sm:space-y-3 mb-4 mt-auto">
+                                        <div className="flex items-center text-gray-600">
+                                            <DollarSign className="h-4 w-4 mr-2 text-emerald-500" aria-hidden="true"/>
+                                            <span className="text-xs sm:text-sm">{project.estimated_budget.toLocaleString()} FCFA</span>
+                                        </div>
+                                        <div className="flex items-center text-gray-600">
+                                            <Calendar className="h-4 w-4 mr-2 text-emerald-500" aria-hidden="true"/>
+                                            <span className="text-xs sm:text-sm">
+                            {new Date(project.created_at).toLocaleDateString(undefined, {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            })}
+                        </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                                        <button
+                                            onClick={() => handleDeleteProject(project.id)}
+                                            className="flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2.5 bg-red-100 text-red-600 text-xs sm:text-sm rounded-lg hover:bg-red-200 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-300"
+                                            aria-label={`Delete ${project.project_name}`}
+                                        >
+                                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" aria-hidden="true"/>
+                                            <span className="hidden xs:inline">Supprimer</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => handleProjectDetails(project)}
+                                            className="flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2.5 border-2 border-emerald-600 text-emerald-600 text-xs sm:text-sm rounded-lg hover:bg-emerald-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                                            aria-label={`View details for ${project.project_name}`}
+                                        >
+                                            <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" aria-hidden="true"/>
+                                            <span className="hidden xs:inline">Voir détails</span>
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-2 sm:mt-3">
+                                        {project.status === 'approved' ? (
+                                            <>
+                                                <button
+                                                    className="flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2.5 bg-gray-100 text-gray-600 text-xs sm:text-sm rounded-lg hover:bg-gray-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                                    onClick={() => navigate(`/entrepreneur/request?projectId=${project.id}`)}
+                                                    aria-label={`Request help for ${project.project_name}`}
+                                                >
+                                                    <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" aria-hidden="true"/>
+                                                    <span className="hidden xs:inline">Aide</span>
+                                                </button>
+
+                                                <button
+                                                    className="flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2.5 bg-blue-100 text-blue-600 text-xs sm:text-sm rounded-lg hover:bg-blue-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                                    onClick={() => toggleChatbot(project)}
+                                                    aria-label={`Chat about ${project.project_name}`}
+                                                >
+                                                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" aria-hidden="true"/>
+                                                    <span className="hidden xs:inline">Discuter</span>
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                className="col-span-2 flex items-center justify-center px-2 py-2 sm:px-3 sm:py-2.5 bg-blue-100 text-blue-600 text-xs sm:text-sm rounded-lg hover:bg-blue-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                                onClick={() => toggleChatbot(project)}
+                                                aria-label={`Chat about ${project.project_name}`}
+                                            >
+                                                <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" aria-hidden="true"/>
+                                                <span className="hidden xs:inline">Discuter</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
 

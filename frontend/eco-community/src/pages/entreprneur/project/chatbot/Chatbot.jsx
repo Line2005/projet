@@ -34,7 +34,8 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
     const messagesEndRef = useRef(null);
     const chatContainerRef = useRef(null);
     const [selectedProject, setSelectedProject] = useState(null);
-
+    // Added state for mobile view handling
+    const [isMobileView, setIsMobileView] = useState(false);
 
     // Set initial suggested questions based on mode
     const getInitialSuggestedQuestions = () => {
@@ -57,6 +58,20 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
 
     const [suggestedQuestions, setSuggestedQuestions] = useState(getInitialSuggestedQuestions());
 
+    // Check for mobile view on component mount and window resize
+    useEffect(() => {
+        const checkIsMobile = () => {
+            setIsMobileView(window.innerWidth < 640);
+        };
+
+        checkIsMobile(); // Initial check
+        window.addEventListener('resize', checkIsMobile);
+
+        return () => {
+            window.removeEventListener('resize', checkIsMobile);
+        };
+    }, []);
+
     useEffect(() => {
         if (isOpen && messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -64,12 +79,13 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
     }, [messages, isOpen]);
 
     useEffect(() => {
-        // Reset messages when the chat is opened/closed or when mode changes
-        if (isOpen) {
+        // Only reset messages when the chat is opened AND messages array is empty
+        if (isOpen && (!messages || messages.length === 0)) {
             setMessages([{ sender: 'bot', text: getInitialMessage() }]);
             setSuggestedQuestions(getInitialSuggestedQuestions());
         }
-    }, [isOpen, isGlobalMode]);
+    }, [isOpen, isGlobalMode, messages, setMessages]);
+
 
     useEffect(() => {
         if (!projectData) return;
@@ -278,7 +294,7 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 w-96 max-w-full h-[550px] max-h-[80vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden border border-emerald-200">
+        <div className={`fixed ${isMobileView ? 'inset-0' : 'bottom-6 right-6'} z-50 ${isMobileView ? 'w-full h-full' : 'w-full sm:w-96 max-w-full h-full sm:h-[550px] max-h-[80vh]'} bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden border border-emerald-200`}>
             {/* Chatbot Header */}
             <div className="bg-emerald-600 text-white px-4 py-3 flex justify-between items-center">
                 <div className="flex items-center">
@@ -298,21 +314,21 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
             <div className="px-3 py-2 bg-emerald-50 border-b border-emerald-100 flex space-x-2 overflow-x-auto">
                 <button
                     onClick={() => handleQuickAction('requirements')}
-                    className="px-3 py-1 bg-white text-emerald-700 text-sm rounded-full border border-emerald-200 hover:bg-emerald-100 flex items-center"
+                    className="px-3 py-1 bg-white text-emerald-700 text-sm rounded-full border border-emerald-200 hover:bg-emerald-100 flex items-center whitespace-nowrap"
                 >
                     <FileText className="h-3 w-3 mr-1" />
                     Exigences
                 </button>
                 <button
                     onClick={() => handleQuickAction('steps')}
-                    className="px-3 py-1 bg-white text-emerald-700 text-sm rounded-full border border-emerald-200 hover:bg-emerald-100 flex items-center"
+                    className="px-3 py-1 bg-white text-emerald-700 text-sm rounded-full border border-emerald-200 hover:bg-emerald-100 flex items-center whitespace-nowrap"
                 >
                     <Info className="h-3 w-3 mr-1" />
                     Étapes
                 </button>
                 <button
                     onClick={() => handleQuickAction('tips')}
-                    className="px-3 py-1 bg-white text-emerald-700 text-sm rounded-full border border-emerald-200 hover:bg-emerald-100 flex items-center"
+                    className="px-3 py-1 bg-white text-emerald-700 text-sm rounded-full border border-emerald-200 hover:bg-emerald-100 flex items-center whitespace-nowrap"
                 >
                     <HelpCircle className="h-3 w-3 mr-1" />
                     Conseils
@@ -383,7 +399,7 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Suggested Questions */}
+            {/* Suggested Questions - with responsive design */}
             {suggestedQuestions.length > 0 && !isLoading && (
                 <div className="px-3 py-2 bg-gray-50 border-t border-gray-200">
                     <p className="text-xs text-gray-500 mb-2">Questions suggérées :</p>
@@ -392,7 +408,7 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
                             <button
                                 key={idx}
                                 onClick={() => handleSuggestedQuestionClick(question)}
-                                className="px-3 py-1 bg-white text-emerald-700 text-xs rounded-full border border-emerald-200 hover:bg-emerald-100"
+                                className="px-3 py-1 bg-white text-emerald-700 text-xs rounded-full border border-emerald-200 hover:bg-emerald-100 whitespace-normal text-left"
                             >
                                 {question}
                             </button>
@@ -416,7 +432,7 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
                     />
                     <button
                         type="submit"
-                        className="p-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="p-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                         disabled={isLoading || !inputMessage.trim()}
                     >
                         <Send className="h-5 w-5" />
