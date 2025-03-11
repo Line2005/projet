@@ -410,6 +410,7 @@ const ProjectsPage = () => {
                         </div>
                     )}
 
+                    {/* Details Component */}
                     <ProjectDetailsCard
                         project={selectedProject}
                         onClose={() => setSelectedProject(null)}
