@@ -35,6 +35,7 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
     const chatContainerRef = useRef(null);
     const [selectedProject, setSelectedProject] = useState(null);
 
+
     // Set initial suggested questions based on mode
     const getInitialSuggestedQuestions = () => {
         if (isGlobalMode) {

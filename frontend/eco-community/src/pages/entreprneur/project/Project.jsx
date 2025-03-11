@@ -39,6 +39,7 @@ const ProjectsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isChatbotOpen, setIsChatbotOpen] = useState(false);
     const [chatbotContext, setChatbotContext] = useState(null);
+    const [messages, setMessages] = useState([]); // Add messages state
 
     // Fonction de navigation flexible
     const handleCreateProject = (path) => {
@@ -89,7 +90,19 @@ const ProjectsPage = () => {
         setIsChatbotOpen(!isChatbotOpen);
     };
 
-
+    // Reset messages when chatbot context changes
+    useEffect(() => {
+        if (isChatbotOpen) {
+            setMessages([
+                {
+                    sender: 'bot',
+                    text: chatbotContext
+                        ? `Bonjour ! Je suis prêt à vous aider avec votre projet "${chatbotContext.project_name}". Que voulez-vous savoir à propos de ce projet ?`
+                        : "Bonjour ! Je suis votre assistant de projets EcoCommunity. Je peux vous aider à comprendre les exigences pour créer un projet, les documents nécessaires, et vous offrir des conseils d'entrepreneuriat. Que souhaitez-vous savoir aujourd'hui ?",
+                },
+            ]);
+        }
+    }, [chatbotContext, isChatbotOpen]);
 
     // Add this function to handle media URLs
     const getImageUrl = (project) => {
@@ -268,8 +281,7 @@ const ProjectsPage = () => {
 
                     {/* Projects Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {filteredProjects.length > 0 ? (
-                            filteredProjects.map((project) => (
+                        {filteredProjects.map((project) => (
                                 <div
                                     key={project.id}
                                     className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 flex flex-col"
@@ -380,14 +392,7 @@ const ProjectsPage = () => {
                                         </div>
                                     </div>
                                 </div>
-                            ))
-                        ) : (
-                            <div className="col-span-full py-16 text-center">
-                                <FolderX className="h-12 w-12 mx-auto text-gray-400 mb-4"/>
-                                <h3 className="text-lg font-medium text-gray-900">Aucun projet trouvé</h3>
-                                <p className="text-gray-500 mt-2">Aucun projet ne correspond à vos critères de recherche.</p>
-                            </div>
-                        )}
+                        ))}
                     </div>
 
                     {/* Empty State */}
@@ -420,7 +425,9 @@ const ProjectsPage = () => {
                     <GeminiChatbot
                         isOpen={isChatbotOpen}
                         onClose={() => setIsChatbotOpen(false)}
-                        projectData={chatbotContext}
+                        projectData={chatbotContext} // Pass null for global mode
+                        messages={messages} // Pass messages state
+                        setMessages={setMessages} // Pass setMessages function
                     />
 
                 </div>
