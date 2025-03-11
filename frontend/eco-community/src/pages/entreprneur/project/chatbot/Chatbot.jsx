@@ -5,7 +5,7 @@ import api from "../../../../Services/api.js";
 // Enhanced Gemini Chatbot Component for Project Creation Guidance
 const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
     // Determine if we're in global mode (no specific project) or project-specific mode
-    const isGlobalMode = !projectData || (Array.isArray(projectData) && projectData.length === 0);
+    const isGlobalMode = projectData === null;
 
     // Set appropriate initial welcome message based on mode
     const getInitialMessage = () => {
@@ -13,9 +13,11 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
             return "Bonjour ! Je suis votre assistant de projets EcoCommunity. Je peux vous aider à comprendre les exigences pour créer un projet, les documents nécessaires, et vous offrir des conseils d'entrepreneuriat. Que souhaitez-vous savoir aujourd'hui ?";
         } else if (Array.isArray(projectData) && projectData.length > 1) {
             return "Bonjour ! Je suis prêt à vous aider avec vos projets. Veuillez sélectionner un projet spécifique dans le menu déroulant ci-dessus pour obtenir une assistance personnalisée.";
-        } else {
+        } else if (projectData && (Array.isArray(projectData) ? projectData[0] : projectData)) {
             const project = Array.isArray(projectData) ? projectData[0] : projectData;
             return `Bonjour ! Je suis prêt à vous aider avec votre projet "${project.project_name}". Que voulez-vous savoir à propos de ce projet ?`;
+        } else {
+            return "Bonjour ! Je suis prêt à vous aider avec votre projet. Que voulez-vous savoir ?";
         }
     };
 
@@ -230,6 +232,8 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
     };
 
     const handleProjectSelect = (project) => {
+        if (!project) return;
+
         setSelectedProject(project);
         updateSuggestedQuestions(project);
         setMessages(prev => [

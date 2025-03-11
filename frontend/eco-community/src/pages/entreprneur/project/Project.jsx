@@ -39,7 +39,6 @@ const ProjectsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isChatbotOpen, setIsChatbotOpen] = useState(false);
     const [chatbotContext, setChatbotContext] = useState(null);
-    const [messageInput, setMessageInput] = useState('');
 
     // Fonction de navigation flexible
     const handleCreateProject = (path) => {
@@ -81,12 +80,11 @@ const ProjectsPage = () => {
 
     // Chatbot management
     const toggleChatbot = (project = null) => {
-        // For global chatbot (floating button), pass null if there are no projects
-        // For project-specific chatbot, pass the specific project
-        if (Array.isArray(project) && project.length === 0) {
-            setChatbotContext(null);
+        // If no project is passed (global floating button), set context to null
+        if (project === null) {
+            setChatbotContext(null); // Force global mode
         } else {
-            setChatbotContext(project);
+            setChatbotContext(project); // Set project-specific context
         }
         setIsChatbotOpen(!isChatbotOpen);
     };
@@ -372,7 +370,7 @@ const ProjectsPage = () => {
                                             ) : (
                                                 <button
                                                     className="col-span-2 flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-600 text-sm rounded-lg hover:bg-blue-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                                                    onClick={() => toggleChatbot(project)}
+                                                    onClick={() => toggleChatbot(project)}  // Pass the project for project-specific mode
                                                     aria-label={`Chat about ${project.project_name}`}
                                                 >
                                                     <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden="true"/>
@@ -385,7 +383,7 @@ const ProjectsPage = () => {
                             ))
                         ) : (
                             <div className="col-span-full py-16 text-center">
-                                <FolderX className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                                <FolderX className="h-12 w-12 mx-auto text-gray-400 mb-4"/>
                                 <h3 className="text-lg font-medium text-gray-900">Aucun projet trouvé</h3>
                                 <p className="text-gray-500 mt-2">Aucun projet ne correspond à vos critères de recherche.</p>
                             </div>
@@ -421,7 +419,7 @@ const ProjectsPage = () => {
                     <GeminiChatbot
                         isOpen={isChatbotOpen}
                         onClose={() => setIsChatbotOpen(false)}
-                        projectData={chatbotContext || projects}
+                        projectData={chatbotContext}
                     />
 
                 </div>
@@ -430,7 +428,7 @@ const ProjectsPage = () => {
             {/* Floating Chatbot Button - Global Assistant */}
             {!isChatbotOpen && (
                 <button
-                    onClick={() => toggleChatbot(projects.length === 0 ? null : projects)}
+                    onClick={() => toggleChatbot(null)}  // Always pass null for global mode
                     className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-emerald-600 text-white shadow-lg hover:bg-emerald-700 transition-all duration-200 flex items-center justify-center"
                 >
                     <MessageCircle className="h-6 w-6"/>
