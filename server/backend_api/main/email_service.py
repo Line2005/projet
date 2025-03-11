@@ -1,4 +1,4 @@
-#
+#email service initialisation
 
 import yagmail
 import logging

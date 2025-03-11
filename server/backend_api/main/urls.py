@@ -3,14 +3,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 
-from . import views
 from .views import RegisterView, LoginView, LogoutView, UserManagementView, UserStatsView, AdminSignupView, \
     ProjectAPIView, ProjectUploadDocumentAPIView, ProjectUpdateStatusAPIView, HelpRequestAPIView, \
     HelpUpdateStatusAPIView, HelpProposalView, EntrepreneurProposalView, ContractAPIView, CollaborationAPIView, \
     ContractViewDownloadAPIView, AnnouncementAPIView, EventManagementView, PublicAnnouncementView, PublicEventView, \
     AdminAnalyticsAPIView, UserView, VerifyResetCodeView, RequestPasswordResetView, ResetPasswordView, \
     ConversationListAPIView, ConversationDetailAPIView, ConversationMessagesAPIView, EventRegistrationView, \
-    EventRegistrationManagementView, EventReminderView, UserEventRegistrationsView
+    EventRegistrationManagementView, EventReminderView, UserEventRegistrationsView, GeminiChatbotView, \
+    FallbackChatbotView, CheckGeminiModelsView
 
 router = DefaultRouter()
 
@@ -37,6 +37,12 @@ urlpatterns = [
     path('projects/<int:pk>/upload-document/', ProjectUploadDocumentAPIView.as_view(), name='project-upload-document'),
     # Update the status of a specific project
     path('projects/<int:pk>/update-status/', ProjectUpdateStatusAPIView.as_view(), name='project-update-status'),
+
+    #Chatbot
+    path('chatbot/gemini/', GeminiChatbotView.as_view(), name='gemini-chatbot'),
+    path('chatbot/fallback/', FallbackChatbotView.as_view(), name='fallback-chatbot'),
+    path('chatbot/check-models/', CheckGeminiModelsView.as_view(), name='check-gemini-models'),
+
     # Demand for help
     path('help-requests/', HelpRequestAPIView.as_view(), name='help_requests_create'),
     path('help-requests/<int:pk>/', HelpRequestAPIView.as_view(), name='help_request_detail'),

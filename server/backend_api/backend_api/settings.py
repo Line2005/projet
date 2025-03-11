@@ -113,6 +113,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 WKHTMLTOPDF_PATH = 'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe'  # Adjust path as needed
 
+# Get Gemini API key from environment variable
+GEMINI_API_KEY = 'AIzaSyClRDF0oR4oc1DpyisBFhJP9VAFBYgqkkk'  # Replace with your actual API key in production
+GEMINI_API_VERSION = 'v1'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

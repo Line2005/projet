@@ -112,6 +112,7 @@ class ProjectModelTest(TestCase):
             phone='1234567890',
             role='entrepreneur'
         )
+        # Create an Entrepreneur object for the user
         self.entrepreneur = Entrepreneur.objects.create(
             user=self.user,
             first_name='John',
@@ -143,7 +144,7 @@ class ProjectModelTest(TestCase):
             estimated_budget=10000.00,
             financing_plan='Self-funded'
         )
-        project.save()
+        project.save()  # This should automatically set the entrepreneur
         self.assertEqual(project.entrepreneur, self.entrepreneur)
 
 class ProjectDocumentModelTest(TestCase):

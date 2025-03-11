@@ -14,16 +14,20 @@ import {
     Users,
     DollarSign,
     HelpCircle,
+    Trash2,
+    Eye,
     Info,
-    HandHelping,
+    FolderX,
     MessageSquare,
     ClipboardCheck,
-    HelpingHand
+    HelpingHand,
+    MessageCircle
 } from 'lucide-react';
 
 import api from "../../../Services/api.js";
 import {ProjectDetailsCard} from "./detail/ProjectModal.jsx";
 import SectorDisplay from "./Sector.jsx";
+import GeminiChatbot from "./chatbot/Chatbot.jsx";
 
 
 const ProjectsPage = () => {
@@ -33,6 +37,9 @@ const ProjectsPage = () => {
     const [projects, setProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+    const [chatbotContext, setChatbotContext] = useState(null);
+    const [messageInput, setMessageInput] = useState('');
 
     // Fonction de navigation flexible
     const handleCreateProject = (path) => {
@@ -70,8 +77,21 @@ const ProjectsPage = () => {
 
     const handleProjectDetails = (project) => {
         setSelectedProject(project);
-
     };
+
+    // Chatbot management
+    const toggleChatbot = (project = null) => {
+        // For global chatbot (floating button), pass null if there are no projects
+        // For project-specific chatbot, pass the specific project
+        if (Array.isArray(project) && project.length === 0) {
+            setChatbotContext(null);
+        } else {
+            setChatbotContext(project);
+        }
+        setIsChatbotOpen(!isChatbotOpen);
+    };
+
+
 
     // Add this function to handle media URLs
     const getImageUrl = (project) => {
@@ -250,76 +270,126 @@ const ProjectsPage = () => {
 
                     {/* Projects Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {filteredProjects.map((project) => (
-                            <div
-                                key={project.id}
-                                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1"
-                            >
-                                <div className="relative">
-                                    <img
-                                        src={getImageUrl(project)}
-                                        alt={project.project_name}
-                                        className="w-full h-48 object-cover"
-                                        onError={(e) => {
-                                            console.log('Image load error for project:', project.project_name);
-                                            console.log('Attempted image URL:', e.target.src);
-                                            e.target.src = "/api/placeholder/400/250";
-                                        }}
-                                    />
-                                    <div className="absolute top-4 right-4 flex space-x-2">
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}>
-                                              {project.status_display}
-                                        </span>
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <div className="mb-4">
-                                        <SectorDisplay sector={project.sector} />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-emerald-600 transition-colors">
-                                        {project.project_name}
-                                    </h3>
-                                    <p className="text-gray-600 mb-4 line-clamp-2">{project.description}</p>
-                                    <div className="space-y-3 mb-4">
-                                        <div className="flex items-center text-gray-600">
-                                            <DollarSign className="h-4 w-4 mr-2 text-emerald-500"/>
+                        {filteredProjects.length > 0 ? (
+                            filteredProjects.map((project) => (
+                                <div
+                                    key={project.id}
+                                    className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1 flex flex-col"
+                                    aria-label={`Project: ${project.project_name}`}
+                                >
+                                    <div className="relative">
+                                        <img
+                                            src={getImageUrl(project)}
+                                            alt={`Project cover for ${project.project_name}`}
+                                            className="w-full h-48 object-cover"
+                                            onError={(e) => {
+                                                e.target.src = "/api/placeholder/400/250";
+                                                e.target.alt = "Project image placeholder";
+                                            }}
+                                            loading="lazy"
+                                        />
+                                        <div className="absolute top-4 right-4 flex space-x-2">
                                             <span
-                                                className="text-sm">{project.estimated_budget.toLocaleString()} FCFA</span>
-                                        </div>
-                                        <div className="flex items-center text-gray-600">
-                                            <Calendar className="h-4 w-4 mr-2 text-emerald-500"/>
-                                            <span
-                                                className="text-sm">{new Date(project.created_at).toLocaleDateString()}</span>
+                                                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(project.status)}`}
+                                                aria-label={`Status: ${project.status_display}`}
+                                            >
+                                                {project.status_display}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="flex space-x-3">
-                                        <button
-                                            onClick={() => handleDeleteProject(project?.id)}
-                                            className="flex-1 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition-all duration-200 shadow-sm hover:shadow-md"
-                                        >
 
-                                            Supprimer
-                                        </button>
-                                        <button
-                                            onClick={() => handleProjectDetails(project)}
-                                            className="flex-1 border-2 border-emerald-600 text-emerald-600 py-2.5 rounded-lg hover:bg-emerald-50 transition-all duration-200"
-                                        >
-                                            Voir détails
-                                        </button>
+                                    <div className="p-6 flex flex-col flex-grow">
+                                        <div className="mb-4">
+                                            <SectorDisplay sector={project.sector}/>
+                                        </div>
+
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-emerald-600 transition-colors">
+                                            {project.project_name}
+                                        </h3>
+
+                                        <p className="text-gray-600 mb-4 line-clamp-3">{project.description}</p>
+
+                                        <div className="space-y-3 mb-4 mt-auto">
+                                            <div className="flex items-center text-gray-600">
+                                                <DollarSign className="h-4 w-4 mr-2 text-emerald-500"
+                                                            aria-hidden="true"/>
+                                                <span
+                                                    className="text-sm">{project.estimated_budget.toLocaleString()} FCFA</span>
+                                            </div>
+                                            <div className="flex items-center text-gray-600">
+                                                <Calendar className="h-4 w-4 mr-2 text-emerald-500" aria-hidden="true"/>
+                                                <span className="text-sm">
+                                                    {new Date(project.created_at).toLocaleDateString(undefined, {
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric'
+                                                    })}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                onClick={() => handleDeleteProject(project.id)}
+                                                className="flex items-center justify-center px-3 py-2.5 bg-red-100 text-red-600 text-sm rounded-lg hover:bg-red-200 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-300"
+                                                aria-label={`Delete ${project.project_name}`}
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true"/>
+                                                Supprimer
+                                            </button>
+
+                                            <button
+                                                onClick={() => handleProjectDetails(project)}
+                                                className="flex items-center justify-center px-3 py-2.5 border-2 border-emerald-600 text-emerald-600 text-sm rounded-lg hover:bg-emerald-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                                                aria-label={`View details for ${project.project_name}`}
+                                            >
+                                                <Eye className="h-4 w-4 mr-1.5" aria-hidden="true"/>
+                                                Voir détails
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3 mt-3">
+                                            {project.status === 'approved' ? (
+                                                <>
+                                                    <button
+                                                        className="flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                                        onClick={() => navigate(`/entrepreneur/request?projectId=${project.id}`)}
+                                                        aria-label={`Request help for ${project.project_name}`}
+                                                    >
+                                                        <HelpCircle className="h-4 w-4 mr-1.5" aria-hidden="true"/>
+                                                        Aide
+                                                    </button>
+
+                                                    <button
+                                                        className="flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-600 text-sm rounded-lg hover:bg-blue-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                                        onClick={() => toggleChatbot(project)}
+                                                        aria-label={`Chat about ${project.project_name}`}
+                                                    >
+                                                        <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden="true"/>
+                                                        Discuter
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button
+                                                    className="col-span-2 flex items-center justify-center px-3 py-2 bg-blue-100 text-blue-600 text-sm rounded-lg hover:bg-blue-200 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                                    onClick={() => toggleChatbot(project)}
+                                                    aria-label={`Chat about ${project.project_name}`}
+                                                >
+                                                    <MessageCircle className="h-4 w-4 mr-1.5" aria-hidden="true"/>
+                                                    Discuter
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                    {project.status === 'approved' && (
-                                        <button
-                                            className="mt-3 w-full flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-600 text-sm rounded-lg hover:bg-gray-200 transition-all duration-200"
-                                            onClick={() => navigate(`/entrepreneur/request?projectId=${project.id}`)}
-                                        >
-                                            <HelpCircle className="h-4 w-4 mr-1"/>
-                                            Aide
-                                        </button>
-                                    )}
                                 </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full py-16 text-center">
+                                <FolderX className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900">Aucun projet trouvé</h3>
+                                <p className="text-gray-500 mt-2">Aucun projet ne correspond à vos critères de recherche.</p>
                             </div>
-                        ))}
+                        )}
                     </div>
 
                     {/* Empty State */}
@@ -347,8 +417,25 @@ const ProjectsPage = () => {
                         onClose={() => setSelectedProject(null)}
                     />
 
+                    {/* Gemini Chatbot Component */}
+                    <GeminiChatbot
+                        isOpen={isChatbotOpen}
+                        onClose={() => setIsChatbotOpen(false)}
+                        projectData={chatbotContext || projects}
+                    />
+
                 </div>
             </div>
+
+            {/* Floating Chatbot Button - Global Assistant */}
+            {!isChatbotOpen && (
+                <button
+                    onClick={() => toggleChatbot(projects.length === 0 ? null : projects)}
+                    className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-emerald-600 text-white shadow-lg hover:bg-emerald-700 transition-all duration-200 flex items-center justify-center"
+                >
+                    <MessageCircle className="h-6 w-6"/>
+                </button>
+            )}
         </div>
     );
 };

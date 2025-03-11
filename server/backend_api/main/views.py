@@ -5,6 +5,7 @@ import random
 import traceback
 import uuid
 from collections import defaultdict
+import google.generativeai as genai
 
 import yagmail
 from django.contrib.auth.password_validation import validate_password
@@ -38,7 +39,6 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models.functions import TruncMonth, ExtractMonth
 from django.utils import timezone
 from datetime import timedelta
-import pdfkit
 import logging
 
 
@@ -2556,3 +2556,377 @@ class ConversationMessagesAPIView(APIView):
                 {'error': 'An error occurred while fetching messages'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+#ChatBot
+logger = logging.getLogger(__name__)
+class GeminiChatbotView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Extract data from request
+            message = request.data.get('message', '')
+            project_context = request.data.get('projectContext', '')
+            conversation_history = request.data.get('conversation_history', [])
+
+            if not message:
+                return Response({"error": "Message is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Configure the Gemini API
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+
+            # Get available models first to check what's actually available
+            try:
+                available_models = genai.list_models()
+                logger.info(f"Available models: {[m.name for m in available_models]}")
+
+                # Find the best available model - prefer newer models if available
+                gemini_models = [m.name for m in available_models if 'gemini' in m.name.lower()]
+
+                if not gemini_models:
+                    raise ValueError("No Gemini models available")
+
+                # Choose model by priority
+                model_name = None
+                for candidate in ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro']:
+                    if candidate in gemini_models:
+                        model_name = candidate
+                        break
+
+                if not model_name:
+                    # If none of our preferred models are available, use the first Gemini model
+                    model_name = gemini_models[0]
+
+                logger.info(f"Using model: {model_name}")
+                model = genai.GenerativeModel(model_name)
+
+            except Exception as model_error:
+                logger.error(f"Error listing models: {str(model_error)}")
+                # Fall back to directly trying the most common model names
+                for fallback_model in ['gemini-1.5-pro', 'gemini-pro', 'gemini-1.0-pro']:
+                    try:
+                        model = genai.GenerativeModel(fallback_model)
+                        logger.info(f"Using fallback model: {fallback_model}")
+                        break
+                    except Exception:
+                        continue
+                else:
+                    # If all fallbacks fail, use the fallback chatbot
+                    logger.error("All model attempts failed, redirecting to fallback chatbot")
+                    return FallbackChatbotView().post(request)
+
+            # Create system prompt with entrepreneur context
+            system_prompt = """
+            Tu es un assistant spécialisé pour EcoCommunity, une plateforme qui aide les entrepreneurs à créer et gérer 
+            leurs projets communautaires. Ton rôle principal est de GUIDER les utilisateurs à travers le processus 
+            de création de projet, en leur expliquant clairement les exigences et les documents nécessaires.
+
+            INFORMATIONS REQUISES POUR LA CRÉATION D'UN PROJET:
+            1. Informations de base:
+               - Nom du projet
+               - Secteur (Agriculture, Technologie, Artisanat, Commerce, Éducation, Santé, Tourisme, Industrie, Services)
+               - Description détaillée
+
+            2. Informations détaillées:
+               - Objectifs spécifiques
+               - Public cible
+               - Budget estimé
+               - Plan de financement
+
+            DOCUMENTS REQUIS (à télécharger sur la plateforme):
+            - Obligatoires:
+              * Carte Nationale d'Identité
+              * Registre de Commerce (pour les entreprises formelles)
+              * Statuts de l'Entreprise (pour les sociétés)
+              * Attestation de Non Redevance Fiscale
+            - Recommandés:
+              * Permis et Licences spécifiques au secteur
+              * Documents de Propriété Intellectuelle (si applicable)
+              * Photos du projet
+              * Étude de Faisabilité
+
+            CONSEILS D'ENTREPRENEURIAT:
+            - Adapte tes conseils au contexte africain
+            - Propose des stratégies de financement adaptées
+            - Suggère des approches pour améliorer la viabilité des projets
+            - Offre des conseils sur la documentation et la présentation de projet
+
+            INSTRUCTIONS SPÉCIFIQUES:
+            - Explique TOUJOURS les étapes du processus de création de projet quand on te le demande
+            - Précise les documents nécessaires en fonction du type de projet
+            - Réponds en français de manière professionnelle mais amicale
+            - Sois concis et pratique
+            - Si tu ne connais pas la réponse, suggère de contacter le support
+            """
+
+            # Add project context if available
+            if project_context:
+                system_prompt += f"\n\nContexte du projet actuel: {project_context}"
+
+            # Try different API interaction methods - different models may have different requirements
+            try:
+                # Method 1: Use chat interface with system prompt if available
+                try:
+                    chat = model.start_chat(history=[])
+
+                    # Try adding system prompt
+                    try:
+                        chat.send_message(system_prompt, role="system")
+                    except:
+                        # Fallback - some models don't support system role
+                        chat.send_message(system_prompt)
+
+                    # Add conversation history
+                    for msg in conversation_history:
+                        role = "user" if msg["role"] == "user" else "model"
+                        try:
+                            chat.send_message(msg["content"], role=role)
+                        except:
+                            # Fallback if custom roles not supported
+                            if role == "user":
+                                chat.send_message(msg["content"])
+
+                    # Send the current message and get response
+                    response = chat.send_message(message)
+                    response_text = response.text
+
+                except Exception as chat_error:
+                    logger.warning(f"Chat API method failed: {str(chat_error)}, trying content generation")
+
+                    # Method 2: Use content generation with combined prompt
+                    combined_prompt = system_prompt + "\n\n"
+
+                    # Add conversation history in a text format
+                    for msg in conversation_history:
+                        prefix = "Utilisateur: " if msg["role"] == "user" else "Assistant: "
+                        combined_prompt += prefix + msg["content"] + "\n\n"
+
+                    # Add the current user message
+                    combined_prompt += "Utilisateur: " + message + "\n\nAssistant: "
+
+                    # Generate content with the combined prompt
+                    generation_response = model.generate_content(combined_prompt)
+                    response_text = generation_response.text
+
+            except Exception as api_error:
+                logger.error(f"All API interaction methods failed: {str(api_error)}")
+                return FallbackChatbotView().post(request)
+
+            return Response({
+                "response": response_text,
+                "message_received": message
+            })
+
+        except Exception as e:
+            # Log the error for debugging
+            logger.error(f"Gemini API error: {str(e)}")
+
+            # Try the fallback chatbot
+            try:
+                return FallbackChatbotView().post(request)
+            except:
+                # If even fallback fails, return error
+                return Response(
+                    {
+                        "error": "Une erreur s'est produite lors de la communication avec l'assistant.",
+                        "details": str(e) if settings.DEBUG else "Contactez l'administrateur pour assistance."
+                    },
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+#Full back to help the chatbot in case it fails
+class FallbackChatbotView(APIView):
+    """
+    A simple rule-based fallback chatbot that can be used when the Gemini API isn't working.
+    This provides basic responses to common questions about project creation.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Extract data from request
+            message = request.data.get('message', '').lower()
+
+            # Simple keyword matching for basic responses
+            if any(keyword in message for keyword in ['document', 'pièce', 'fichier', 'télécharger']):
+                response = """
+                Les documents requis pour créer un projet sur EcoCommunity sont:
+
+                Documents obligatoires:
+                - Carte Nationale d'Identité
+                - Registre de Commerce (pour les entreprises formelles)
+                - Statuts de l'Entreprise (pour les sociétés)
+                - Attestation de Non Redevance Fiscale
+
+                Documents recommandés:
+                - Permis et Licences spécifiques à votre secteur
+                - Documents de Propriété Intellectuelle (si applicable)
+                - Photos du projet
+                - Étude de Faisabilité
+
+                Tous ces documents doivent être téléchargés dans l'onglet "Documents" lors de la création de votre projet.
+                """
+
+            elif any(keyword in message for keyword in ['étape', 'process', 'créer', 'création', 'comment']):
+                response = """
+                Voici les étapes pour créer un projet sur EcoCommunity:
+
+                1. Inscription/Connexion: Connectez-vous à votre compte ou créez-en un nouveau
+                2. Nouveau Projet: Cliquez sur "Créer un projet" dans votre tableau de bord
+                3. Informations de Base: Remplissez le nom, secteur et description
+                4. Détails du Projet: Précisez les objectifs, public cible, budget estimé
+                5. Téléchargement de Documents: Ajoutez les documents requis
+                6. Soumission: Envoyez votre projet pour examen
+                7. Suivi: Attendez l'approbation et répondez aux éventuelles questions
+
+                Une fois soumis, votre projet sera examiné par notre équipe qui pourra l'approuver, demander des modifications, ou le rejeter avec des commentaires.
+                """
+
+            elif any(keyword in message for keyword in ['secteur', 'domaine', 'activité']):
+                response = """
+                EcoCommunity accepte des projets dans plusieurs secteurs:
+
+                - Agriculture: projets agricoles, agroalimentaires, élevage
+                - Technologie: solutions numériques, applications, services en ligne
+                - Artisanat: production artisanale, arts traditionnels
+                - Commerce: entreprises commerciales, import/export
+                - Éducation: formations, écoles, services éducatifs
+                - Santé: cliniques, services médicaux, bien-être
+                - Tourisme: hôtellerie, restauration, services touristiques
+                - Industrie: production industrielle, transformation
+                - Services: prestation de services divers
+
+                Chaque secteur a ses propres spécificités en termes de documents requis et critères d'évaluation.
+                """
+
+            elif any(keyword in message for keyword in ['budget', 'finance', 'argent', 'coût']):
+                response = """
+                Pour bien estimer votre budget et plan de financement:
+
+                1. Identifiez tous les coûts: matériel, personnel, local, marketing, etc.
+                2. Incluez les coûts de démarrage ET d'exploitation sur 12 mois
+                3. Prévoyez une marge pour imprévus (15-20% recommandé)
+
+                Sources de financement possibles:
+                - Fonds propres
+                - Prêts bancaires
+                - Microfinance
+                - Subventions gouvernementales
+                - Investisseurs privés
+                - Financement participatif
+
+                Votre plan doit être réaliste et détaillé, avec des estimations justifiées.
+                """
+
+            elif any(keyword in message for keyword in ['conseil', 'astuce', 'recommandation', 'approuver']):
+                response = """
+                Conseils pour augmenter les chances d'approbation de votre projet:
+
+                1. Soyez précis: Détaillez clairement votre projet, ses objectifs et son impact
+                2. Documentation complète: Fournissez tous les documents requis
+                3. Viabilité financière: Présentez un budget réaliste et un plan de financement solide
+                4. Impact communautaire: Expliquez les bénéfices pour la communauté locale
+                5. Innovation: Mettez en avant les aspects innovants de votre projet
+                6. Présentation professionnelle: Soignez la rédaction et la présentation
+
+                Les projets bien documentés avec un impact social positif démontrable ont plus de chances d'être approuvés.
+                """
+
+            else:
+                # Default response
+                response = """
+                Je suis votre assistant EcoCommunity. Je peux vous aider sur:
+
+                - Les étapes de création d'un projet
+                - Les documents requis pour votre dossier
+                - Les conseils pour améliorer votre projet
+                - Les informations spécifiques à votre secteur d'activité
+
+                Comment puis-je vous aider aujourd'hui?
+                """
+
+            return Response({
+                "response": response.strip(),
+                "message_received": message,
+                "using_fallback": True
+            })
+
+        except Exception as e:
+            import logging
+            logging.error(f"Fallback chatbot error: {str(e)}")
+            return Response(
+                {"error": "Une erreur s'est produite. Veuillez réessayer plus tard."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+#Verify the API Key to see if it is good
+class CheckGeminiModelsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            # Configure the Gemini API
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+
+            # Test connection and API key validity
+            try:
+                # List all available models
+                models = genai.list_models()
+                model_info = []
+
+                # Log all model information for debugging
+                for model in models:
+                    logger.info(f"Found model: {model.name}")
+                    model_details = {
+                        "name": model.name,
+                        "display_name": getattr(model, "display_name", "Unknown"),
+                        "description": getattr(model, "description", "No description"),
+                        "input_token_limit": getattr(model, "input_token_limit", "Unknown"),
+                        "output_token_limit": getattr(model, "output_token_limit", "Unknown"),
+                        "supported_methods": getattr(model, "supported_generation_methods", []),
+                    }
+                    model_info.append(model_details)
+
+                # If we have models that contain "gemini" in the name
+                gemini_models = [m for m in model_info if "gemini" in m["name"].lower()]
+
+                # Test a simple generation with one model to verify functionality
+                if gemini_models:
+                    test_model_name = gemini_models[0]["name"]
+                    test_model = genai.GenerativeModel(test_model_name)
+
+                    try:
+                        test_response = test_model.generate_content(
+                            "Say 'test successful' if you can see this message.")
+                        test_result = test_response.text
+                    except Exception as gen_error:
+                        test_result = f"Generation test failed: {str(gen_error)}"
+                else:
+                    test_result = "No Gemini models available for testing"
+
+                return Response({
+                    "api_status": "connected",
+                    "available_models": model_info,
+                    "gemini_models_found": len(gemini_models),
+                    "total_models": len(model_info),
+                    "test_result": test_result,
+                    "api_version": getattr(genai, "version", "Unknown")
+                })
+
+            except Exception as model_error:
+                # More detailed error info for troubleshooting
+                error_message = str(model_error)
+                return Response({
+                    "api_status": "error",
+                    "error_type": type(model_error).__name__,
+                    "error_message": error_message,
+                    "possible_solution": "Verify your API key is valid and has access to Gemini models"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            logging.error(f"Error checking models: {str(e)}")
+            return Response({
+                "api_status": "configuration_failed",
+                "error": str(e),
+                "recommendation": "Check your GEMINI_API_KEY in settings and ensure the google-generativeai package is installed correctly."
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
