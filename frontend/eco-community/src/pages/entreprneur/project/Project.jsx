@@ -79,15 +79,34 @@ const ProjectsPage = () => {
         setSelectedProject(project);
     };
 
-    // Chatbot management
     const toggleChatbot = (project = null) => {
-        // If no project is passed (global floating button), set context to null
-        if (project === null) {
-            setChatbotContext(null); // Force global mode
+        if (isChatbotOpen) {
+            // Close the chatbot first
+            setIsChatbotOpen(false);
+            setTimeout(() => {
+                // Set the new context and reopen the chatbot
+                setChatbotContext(project);
+                const initialMessage = {
+                    sender: 'bot',
+                    text: project
+                        ? `Bonjour ! Je suis prêt à vous aider avec votre projet "${project.project_name}". Que voulez-vous savoir à propos de ce projet ?`
+                        : "Bonjour ! Je suis votre assistant de projets EcoCommunity. Je peux vous aider à comprendre les exigences pour créer un projet, les documents nécessaires, et vous offrir des conseils d'entrepreneuriat. Que souhaitez-vous savoir aujourd'hui ?"
+                };
+                setMessages([initialMessage]);
+                setIsChatbotOpen(true);
+            }, 200); // Small delay to allow the chatbot to close
         } else {
-            setChatbotContext(project); // Set project-specific context
+            // Open the chatbot with the new context
+            setChatbotContext(project);
+            const initialMessage = {
+                sender: 'bot',
+                text: project
+                    ? `Bonjour ! Je suis prêt à vous aider avec votre projet "${project.project_name}". Que voulez-vous savoir à propos de ce projet ?`
+                    : "Bonjour ! Je suis votre assistant de projets EcoCommunity. Je peux vous aider à comprendre les exigences pour créer un projet, les documents nécessaires, et vous offrir des conseils d'entrepreneuriat. Que souhaitez-vous savoir aujourd'hui ?"
+            };
+            setMessages([initialMessage]);
+            setIsChatbotOpen(true);
         }
-        setIsChatbotOpen(!isChatbotOpen);
     };
 
     // Reset messages when chatbot context changes
@@ -425,9 +444,9 @@ const ProjectsPage = () => {
                     <GeminiChatbot
                         isOpen={isChatbotOpen}
                         onClose={() => setIsChatbotOpen(false)}
-                        projectData={chatbotContext} // Pass null for global mode
-                        messages={messages} // Pass messages state
-                        setMessages={setMessages} // Pass setMessages function
+                        projectData={chatbotContext}
+                        messages={messages}
+                        setMessages={setMessages}
                     />
 
                 </div>

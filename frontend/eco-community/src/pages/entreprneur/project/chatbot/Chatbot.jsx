@@ -36,6 +36,7 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
     const [selectedProject, setSelectedProject] = useState(null);
     // Added state for mobile view handling
     const [isMobileView, setIsMobileView] = useState(false);
+    const [internalMessages, setInternalMessages] = useState([]);
 
     // Set initial suggested questions based on mode
     const getInitialSuggestedQuestions = () => {
@@ -78,13 +79,14 @@ const GeminiChatbot = ({ projectData, onClose, isOpen }) => {
         }
     }, [messages, isOpen]);
 
+    // Only initialize messages if none are provided from parent
     useEffect(() => {
-        // Only reset messages when the chat is opened AND messages array is empty
-        if (isOpen && (!messages || messages.length === 0)) {
-            setMessages([{ sender: 'bot', text: getInitialMessage() }]);
+        if (isOpen) {
+            const initialMessage = getInitialMessage();
+            setMessages([{ sender: 'bot', text: initialMessage }]);
             setSuggestedQuestions(getInitialSuggestedQuestions());
         }
-    }, [isOpen, isGlobalMode, messages, setMessages]);
+    }, [projectData, isOpen]);
 
 
     useEffect(() => {
